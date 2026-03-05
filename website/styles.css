@@ -1,0 +1,233 @@
+:root {
+  --bg-1: #f4efe3;
+  --bg-2: #e8f4f7;
+  --ink: #13263f;
+  --ink-soft: #2e4a68;
+  --line: rgba(19, 38, 63, 0.12);
+  --accent: #ff6c37;
+  --accent-2: #06a0a8;
+  --panel: rgba(255, 255, 255, 0.7);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1000px 650px at -10% -20%, #ffe2c9 0%, transparent 55%),
+    radial-gradient(850px 600px at 120% -10%, #d7f4f8 0%, transparent 50%),
+    linear-gradient(145deg, var(--bg-1), var(--bg-2));
+  position: relative;
+  overflow-x: hidden;
+}
+
+.glow {
+  position: fixed;
+  width: 360px;
+  height: 360px;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: 0.38;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-a {
+  top: -100px;
+  left: -120px;
+  background: #ffb18d;
+}
+
+.glow-b {
+  right: -130px;
+  bottom: -140px;
+  background: #99dee3;
+}
+
+.layout {
+  position: relative;
+  z-index: 1;
+  width: min(1060px, calc(100% - 2.4rem));
+  margin: 0 auto;
+  padding: 2rem 0 2.8rem;
+}
+
+.hero {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  padding: clamp(1.4rem, 2vw, 2.2rem);
+  animation: rise 500ms ease-out both;
+}
+
+.hero-logo {
+  width: clamp(88px, 11vw, 130px);
+  display: block;
+}
+
+.eyebrow {
+  margin: 0.7rem 0 0;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+h1 {
+  margin: 0.5rem 0 0;
+  font-size: clamp(2rem, 5vw, 3.15rem);
+  line-height: 1.05;
+  max-width: 15ch;
+}
+
+.lead {
+  margin: 1rem 0 0;
+  max-width: 64ch;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.lead span {
+  font-family: "IBM Plex Mono", monospace;
+  background: rgba(19, 38, 63, 0.08);
+  border: 1px solid rgba(19, 38, 63, 0.15);
+  border-radius: 8px;
+  padding: 0.05rem 0.45rem 0.1rem;
+}
+
+.hero-actions {
+  margin-top: 1.35rem;
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(145deg, #ff7b4c, var(--accent));
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(255, 108, 55, 0.25);
+}
+
+.btn-ghost {
+  color: var(--ink);
+  border: 1px solid rgba(19, 38, 63, 0.22);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.grid {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1rem 1rem 1.1rem;
+  animation: rise 540ms ease-out both;
+}
+
+.card:nth-child(1),
+.card:nth-child(2) {
+  grid-column: span 6;
+}
+
+.card:nth-child(3),
+.card:nth-child(4) {
+  grid-column: span 6;
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.08rem;
+}
+
+.card p,
+.card li {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.card ol {
+  padding-left: 1.1rem;
+  margin: 0.4rem 0 0;
+}
+
+.footer {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer a {
+  color: #0d5888;
+  text-decoration: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .layout {
+    width: min(1060px, calc(100% - 1rem));
+    padding-top: 1rem;
+  }
+
+  .card:nth-child(1),
+  .card:nth-child(2),
+  .card:nth-child(3),
+  .card:nth-child(4) {
+    grid-column: span 12;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+}
+
