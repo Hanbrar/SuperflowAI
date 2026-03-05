@@ -71,8 +71,13 @@ body {
 }
 
 .hero-logo {
-  width: clamp(88px, 11vw, 130px);
+  width: clamp(170px, 28vw, 340px);
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
   display: block;
+  image-rendering: auto;
+  margin-bottom: 0.2rem;
 }
 
 .eyebrow {
@@ -230,4 +235,3 @@ h1 {
     width: 100%;
   }
 }
-
