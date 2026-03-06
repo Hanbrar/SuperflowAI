@@ -21,16 +21,15 @@
         <img src="logo_web.png" alt="Super Flow logo">
       </a>
       <nav class="tabs">
-        <a href="#features">Features</a>
         <a href="https://github.com/Hanbrar/SuperflowAI">GitHub</a>
-        <a href="https://github.com/Hanbrar/SuperflowAI/releases/latest">Download Now</a>
+        <a href="https://github.com/Hanbrar/SuperflowAI/releases/latest">Download</a>
       </nav>
     </header>
 
     <section id="home" class="hero">
       <p class="eyebrow">Windows Desktop App</p>
       <h1>Hold Ctrl+Space and talk.</h1>
-      <p class="lead">Simple voice dictation that feels instant. Super Flow transcribes and pastes directly where your cursor is.</p>
+      <p class="lead">Simple, fast, private voice dictation that feels instant. Super Flow transcribes and pastes directly where your cursor is.</p>
 
       <div class="flags">
         <span>Currently Free</span>
@@ -41,6 +40,26 @@
       <div class="hero-actions">
         <a class="btn primary" href="https://github.com/Hanbrar/SuperflowAI/releases/latest">Download Windows App</a>
         <a class="btn ghost" href="https://github.com/Hanbrar/SuperflowAI">GitHub</a>
+      </div>
+    </section>
+
+    <section class="why" aria-label="Why use SuperFlow AI">
+      <div class="why-card">
+        <p class="why-eyebrow">Why use SuperFlow AI</p>
+        <div class="wpm-compare">
+          <p class="wpm-item">
+            Average writing speed:
+            <strong id="avgWpm" data-target="50">50</strong>
+            <span>WPM</span>
+          </p>
+          <p class="wpm-arrow" aria-hidden="true">-></p>
+          <p class="wpm-item">
+            SuperFlow speaking speed:
+            <strong id="voiceWpm" data-target="200">200+</strong>
+            <span>WPM</span>
+          </p>
+        </div>
+        <p class="why-copy">You can explain ideas faster with your voice than with traditional typing.</p>
       </div>
     </section>
 
@@ -65,6 +84,56 @@
       <a href="https://x.com/ItsHB17">X</a>
     </footer>
   </main>
+
+  <script>
+    (() => {
+      const section = document.querySelector('.why');
+      if (!section) return;
+
+      const avgEl = document.getElementById('avgWpm');
+      const voiceEl = document.getElementById('voiceWpm');
+      if (!avgEl || !voiceEl) return;
+
+      let hasPlayed = false;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const animateCounter = (el, target, duration, suffix = '') =>
+        new Promise((resolve) => {
+          const startTime = performance.now();
+          const from = 0;
+          const step = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const value = Math.round(from + (target - from) * eased);
+            el.textContent = `${value}${suffix}`;
+            if (progress < 1) requestAnimationFrame(step);
+            else resolve();
+          };
+          requestAnimationFrame(step);
+        });
+
+      const run = async () => {
+        if (hasPlayed) return;
+        hasPlayed = true;
+        section.classList.add('active');
+        if (reducedMotion) {
+          avgEl.textContent = `${avgEl.dataset.target}`;
+          voiceEl.textContent = `${voiceEl.dataset.target}+`;
+          return;
+        }
+        await animateCounter(avgEl, Number(avgEl.dataset.target), 850);
+        await animateCounter(voiceEl, Number(voiceEl.dataset.target), 950, '+');
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          run();
+          observer.disconnect();
+        }
+      }, { threshold: 0.35 });
+
+      observer.observe(section);
+    })();
+  </script>
 </body>
 </html>
-

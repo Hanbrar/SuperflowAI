@@ -168,8 +168,101 @@ h1 {
   background: rgba(255, 255, 255, 0.7);
 }
 
+.why {
+  margin-top: 0.95rem;
+}
+
+.why-card {
+  border-radius: 28px;
+  padding: clamp(1.15rem, 2vw, 1.9rem);
+  background:
+    linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52)),
+    radial-gradient(420px 170px at 84% 0%, rgba(133, 220, 228, 0.2), transparent 74%);
+  border: 1px solid rgba(19, 38, 64, 0.09);
+  box-shadow: 0 18px 46px rgba(19, 38, 64, 0.08);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.why-eyebrow {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4d6789;
+  font-size: 0.72rem;
+}
+
+.wpm-compare {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wpm-item {
+  margin: 0;
+  color: #355273;
+  line-height: 1.35;
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  opacity: 0.6;
+  transform: translateY(6px);
+  transition: opacity 460ms ease, transform 460ms ease;
+}
+
+.wpm-item strong {
+  color: #0d2544;
+  font-size: clamp(1.45rem, 2.8vw, 2.15rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 4ch;
+}
+
+.wpm-item span {
+  color: #4d6789;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+}
+
+.wpm-arrow {
+  margin: 0;
+  color: #4c6788;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 460ms ease 100ms, transform 460ms ease 100ms;
+}
+
+.why-copy {
+  margin: 0.68rem 0 0;
+  color: #3f5b7d;
+  max-width: 68ch;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 460ms ease 170ms, transform 460ms ease 170ms;
+}
+
+.why.active .wpm-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.why.active .wpm-arrow,
+.why.active .why-copy {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .features {
-  margin-top: 1rem;
+  margin-top: 0.95rem;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
@@ -177,10 +270,10 @@ h1 {
 
 .feature-card {
   padding: 1.1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(19, 38, 64, 0.11);
-  box-shadow: 0 12px 30px rgba(19, 38, 64, 0.06);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.56));
+  border: 1px solid rgba(19, 38, 64, 0.08);
+  box-shadow: 0 10px 26px rgba(19, 38, 64, 0.055);
 }
 
 .feature-card h2 {
@@ -237,8 +330,16 @@ h1 {
     gap: 0.7rem 0.95rem;
   }
 
+  .wpm-compare {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .wpm-arrow {
+    display: none;
+  }
+
   .hero-actions .btn {
     width: 100%;
   }
 }
-
