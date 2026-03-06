@@ -3,65 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Super Flow | Free Voice Dictation</title>
-  <meta name="description" content="Hold Ctrl+Space and speak. Super Flow is a free voice dictation tool for Windows.">
+  <title>Super Flow | Free Windows Dictation</title>
+  <meta name="description" content="Simple voice dictation for free on Windows. Hold Ctrl+Space, talk, and paste instantly.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="overlay"></div>
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
 
-  <main class="page">
-    <header class="topbar">
-      <img src="logo_web.png" alt="Super Flow logo" class="brand">
-      <nav class="nav">
-        <a href="#features">Features</a>
-        <a href="https://github.com/Hanbrar/SuperflowAI">GitHub</a>
-        <a href="https://github.com/Hanbrar/SuperflowAI/releases/latest">Download</a>
-      </nav>
-      <a class="cta" href="https://github.com/Hanbrar/SuperflowAI/releases/latest">Download</a>
-    </header>
-
+  <main class="layout">
     <section class="hero">
-      <div class="glass">
-        <h1>Innovate</h1>
-        <p class="pill">Press <span>Ctrl + Space</span> and speak</p>
+      <div class="hero-logo-wrap">
+        <img src="logo_web.png" alt="Super Flow logo" class="hero-logo">
       </div>
-
+      <p class="eyebrow">Windows Desktop App</p>
+      <h1>Hold Ctrl+Space, talk, and innovate.</h1>
       <p class="lead">
-        The world's open-source, free voice dictation tool to 10x your productivity and pay <strong>nothing.</strong>
+        Simple voice dictation for free. Super Flow transcribes your speech and pastes it exactly where your cursor is.
       </p>
-
-      <p class="shortcut">Press <strong>Ctrl + Space</strong> and speak</p>
-      <div class="keys">
-        <span>Ctrl</span>
-        <span>Space</span>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/Hanbrar/SuperflowAI/releases/latest">Download Windows App</a>
+        <a class="btn btn-ghost" href="https://github.com/Hanbrar/SuperflowAI">View GitHub</a>
       </div>
     </section>
 
-    <section id="features" class="features">
-      <article class="feature-card">
-        <h2>AI-Powered Dictation</h2>
-        <p>Low-latency speech-to-text designed for writing, coding, and fast communication.</p>
+    <section class="grid">
+      <article class="card">
+        <h2>How It Works</h2>
+        <ol>
+          <li>Open Super Flow.</li>
+          <li>Select your microphone.</li>
+          <li>Hold <strong>Ctrl+Space</strong> to start dictation.</li>
+          <li>Release to transcribe and auto-paste text.</li>
+        </ol>
       </article>
-      <article class="feature-card">
-        <h2>Open Source + Secure</h2>
-        <p>Runs on a free local stack with no mandatory cloud account required.</p>
+
+      <article class="card">
+        <h2>Simple + Fast</h2>
+        <p>
+          Built for coding, email, and posting with low-latency local transcription and direct paste flow.
+        </p>
       </article>
-      <article class="feature-card">
-        <h2>100% Free To Use</h2>
-        <p>Built to stay free for core functionality so anyone can ship with their voice.</p>
+
+      <article class="card">
+        <h2>Session PDF</h2>
+        <p>
+          No permanent storage by default. Export your temporary session transcript to PDF anytime.
+        </p>
+      </article>
+
+      <article class="card">
+        <h2>Always Free</h2>
+        <p>
+          Uses a local open-source speech stack, so there is no subscription for core dictation usage.
+        </p>
       </article>
     </section>
 
     <footer class="footer">
       <p>made by Hanryck Brar</p>
       <a href="https://github.com/Hanbrar/SuperflowAI">GitHub</a>
-      <a href="https://x.com/ItsHB17">X</a>
+      <a href="https://x.com/ItsHB17">Twitter</a>
     </footer>
   </main>
 </body>
 </html>
-
