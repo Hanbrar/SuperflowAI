@@ -37,10 +37,6 @@ SAMPLE_RATE = 16000
 CHANNELS = 1
 TRANSCRIBE_BEAM_SIZE = 1
 TRANSCRIBE_VAD_FILTER = False
-INITIAL_PROMPT = (
-    "The user is dictating software code, professional emails, and social posts. "
-    "Preserve punctuation, symbols, and capitalization accurately."
-)
 
 warnings.filterwarnings("ignore", message="`huggingface_hub` cache-system uses symlinks.*")
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
@@ -126,14 +122,15 @@ class SuperFlowApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title(APP_TITLE)
-        self.root.geometry("640x800")
-        self.root.minsize(600, 740)
-        self.root.configure(bg="#f7f3ea")
+        self.root.geometry("720x860")
+        self.root.minsize(680, 780)
+        self.root.configure(bg="#f2f5fa")
 
         self.status_var = tk.StringVar(
-            value="Ready. Hold Ctrl+Space, then release to transcribe and paste at cursor."
+            value="Ready. Hold Ctrl+Space, speak, release, and paste instantly."
         )
         self.mode_var = tk.StringVar(value="control")
+        self.recorder_view_var = tk.StringVar(value="show")
         self.mic_var = tk.StringVar(value="")
 
         self.model: WhisperModel | None = None
@@ -147,7 +144,6 @@ class SuperFlowApp:
         self.audio_frames: list[np.ndarray[Any, Any]] = []
         self.current_sample_rate = SAMPLE_RATE
         self.stream: sd.InputStream | None = None
-        self.recording_source = ""
         self.hotkey_handles: list[int] = []
         self.hook_handle: Any = None
 
@@ -174,11 +170,11 @@ class SuperFlowApp:
     def _build_ui(self) -> None:
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("TFrame", background="#f7f3ea")
-        style.configure("TLabel", background="#f7f3ea", foreground="#15233c", font=("Segoe UI", 10))
-        style.configure("Title.TLabel", font=("Segoe UI Semibold", 24), foreground="#0f274d")
-        style.configure("Subtitle.TLabel", font=("Segoe UI", 11), foreground="#2e466b")
-        style.configure("TButton", padding=8, font=("Segoe UI Semibold", 10))
+        style.configure("TFrame", background="#f2f5fa")
+        style.configure("TLabel", background="#f2f5fa", foreground="#15233c", font=("Segoe UI", 10))
+        style.configure("Title.TLabel", font=("Segoe UI Semibold", 28), foreground="#101f3a")
+        style.configure("Subtitle.TLabel", font=("Segoe UI", 11), foreground="#43516a")
+        style.configure("TButton", padding=9, font=("Segoe UI Semibold", 10))
 
         outer = ttk.Frame(self.root, padding=20)
         outer.pack(fill="both", expand=True)
@@ -188,24 +184,31 @@ class SuperFlowApp:
         ttk.Label(outer, text="Super Flow", style="Title.TLabel", anchor="center").pack(pady=(10, 2))
         ttk.Label(
             outer,
-            text="Free dictation for Windows. Built for coding, email, and posting.",
+            text="Simple voice dictation for free.",
             style="Subtitle.TLabel",
             anchor="center",
-        ).pack(pady=(0, 16))
+        ).pack(pady=(0, 10))
 
-        control_card = ttk.Frame(outer, padding=14)
+        control_card = tk.Frame(
+            outer,
+            bg="#ffffff",
+            highlightthickness=1,
+            highlightbackground="#d7dfea",
+            padx=14,
+            pady=14,
+        )
         control_card.pack(fill="x", pady=(0, 10))
 
-        mic_row = ttk.Frame(control_card)
+        mic_row = tk.Frame(control_card, bg="#ffffff")
         mic_row.pack(fill="x", pady=(0, 10))
-        ttk.Label(mic_row, text="Microphone").pack(side="left")
-        self.mic_combo = ttk.Combobox(mic_row, textvariable=self.mic_var, state="readonly", width=46)
+        tk.Label(mic_row, text="Microphone", bg="#ffffff", fg="#2f3f58", font=("Segoe UI Semibold", 10)).pack(side="left")
+        self.mic_combo = ttk.Combobox(mic_row, textvariable=self.mic_var, state="readonly", width=52)
         self.mic_combo.pack(side="left", padx=8, fill="x", expand=True)
         ttk.Button(mic_row, text="Refresh", command=self._refresh_microphones).pack(side="left")
 
-        mode_row = ttk.Frame(control_card)
+        mode_row = tk.Frame(control_card, bg="#ffffff")
         mode_row.pack(fill="x", pady=(0, 6))
-        ttk.Label(mode_row, text="Activation mode").pack(side="left")
+        tk.Label(mode_row, text="Activation mode", bg="#ffffff", fg="#2f3f58", font=("Segoe UI Semibold", 10)).pack(side="left")
         ttk.Radiobutton(mode_row, text="Toggle", value="toggle", variable=self.mode_var, command=self._on_mode_changed).pack(
             side="left", padx=(12, 0)
         )
@@ -217,41 +220,94 @@ class SuperFlowApp:
             command=self._on_mode_changed,
         ).pack(side="left", padx=10)
 
+        view_row = tk.Frame(control_card, bg="#ffffff")
+        view_row.pack(fill="x", pady=(0, 6))
+        tk.Label(view_row, text="Recorder view", bg="#ffffff", fg="#2f3f58", font=("Segoe UI Semibold", 10)).pack(side="left")
+        ttk.Radiobutton(
+            view_row,
+            text="Show SuperFlow Recorder",
+            value="show",
+            variable=self.recorder_view_var,
+            command=self._on_view_changed,
+        ).pack(side="left", padx=(12, 0))
+        ttk.Radiobutton(
+            view_row,
+            text="Background only",
+            value="hidden",
+            variable=self.recorder_view_var,
+            command=self._on_view_changed,
+        ).pack(side="left", padx=10)
+
         ttk.Label(
             control_card,
-            text=(
-                "Default hotkey: Ctrl+Space in Control mode. Hold to speak, release to paste. "
-                "Ctrl+H still opens the popup flow."
-            ),
+            text="Hold Ctrl+Space and talk. Release to paste where your cursor is.",
             wraplength=580,
             style="Subtitle.TLabel",
         ).pack(fill="x", pady=(2, 10))
 
-        action_row = ttk.Frame(control_card)
+        action_row = tk.Frame(control_card, bg="#ffffff")
         action_row.pack(fill="x")
         ttk.Button(action_row, text="Export Session PDF", command=self._export_session_pdf).pack(side="left")
         ttk.Button(action_row, text="Copy Last Transcript", command=self._copy_last_transcript).pack(side="left", padx=8)
         ttk.Button(action_row, text="Clear Session", command=self._clear_session).pack(side="left")
 
-        status_card = ttk.Frame(outer, padding=14)
+        status_card = tk.Frame(
+            outer,
+            bg="#ffffff",
+            highlightthickness=1,
+            highlightbackground="#d7dfea",
+            padx=14,
+            pady=14,
+        )
         status_card.pack(fill="x", pady=(0, 10))
-        ttk.Label(status_card, textvariable=self.status_var, wraplength=580).pack(anchor="w")
+        tk.Label(
+            status_card,
+            textvariable=self.status_var,
+            wraplength=640,
+            bg="#ffffff",
+            fg="#334965",
+            font=("Segoe UI", 10),
+            anchor="w",
+            justify="left",
+        ).pack(anchor="w")
 
-        transcript_card = ttk.Frame(outer, padding=14)
+        transcript_card = tk.Frame(
+            outer,
+            bg="#ffffff",
+            highlightthickness=1,
+            highlightbackground="#d7dfea",
+            padx=14,
+            pady=14,
+        )
         transcript_card.pack(fill="both", expand=True)
-        ttk.Label(transcript_card, text="Session Transcript (temporary)").pack(anchor="w", pady=(0, 8))
-
-        self.transcript_box = tk.Text(
+        tk.Label(
             transcript_card,
+            text="Session Transcript (temporary)",
+            bg="#ffffff",
+            fg="#2f3f58",
+            font=("Segoe UI Semibold", 11),
+        ).pack(anchor="w", pady=(0, 8))
+
+        transcript_inner = tk.Frame(transcript_card, bg="#ffffff")
+        transcript_inner.pack(fill="both", expand=True)
+        self.transcript_box = tk.Text(
+            transcript_inner,
             height=14,
             wrap="word",
             state="disabled",
-            bg="#fffdf8",
-            fg="#1a2940",
-            font=("Consolas", 10),
+            bg="#f7f9fc",
+            fg="#1e2e46",
+            font=("Segoe UI", 10),
             relief="flat",
+            padx=10,
+            pady=10,
         )
-        self.transcript_box.pack(fill="both", expand=True)
+        self.transcript_box.tag_configure("time", foreground="#76839a", font=("Consolas", 9, "bold"))
+        self.transcript_box.tag_configure("msg", foreground="#1e2e46", font=("Segoe UI", 10))
+        scroll = ttk.Scrollbar(transcript_inner, orient="vertical", command=self.transcript_box.yview)
+        self.transcript_box.configure(yscrollcommand=scroll.set)
+        self.transcript_box.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
 
         footer = ttk.Frame(outer)
         footer.pack(fill="x", pady=(12, 0))
@@ -276,7 +332,7 @@ class SuperFlowApp:
                 image = image.crop(bbox)
             image.thumbnail((360, 170), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            holder = tk.Label(parent, image=self.logo_photo, bg="#f7f3ea", bd=0, highlightthickness=0)
+            holder = tk.Label(parent, image=self.logo_photo, bg="#f2f5fa", bd=0, highlightthickness=0)
             holder.pack()
         except Exception:
             pass
@@ -314,7 +370,6 @@ class SuperFlowApp:
     def _register_hotkeys(self) -> None:
         try:
             self.hotkey_handles.append(keyboard.add_hotkey("ctrl+space", self._on_space_hotkey, suppress=False))
-            self.hotkey_handles.append(keyboard.add_hotkey("ctrl+h", self._on_h_hotkey, suppress=False))
             self.hotkey_handles.append(keyboard.add_hotkey("esc", self._on_escape_hotkey, suppress=False))
             self.hook_handle = keyboard.hook(self._on_key_event)
         except Exception as exc:
@@ -324,9 +379,19 @@ class SuperFlowApp:
     def _on_mode_changed(self) -> None:
         self.combo_is_pressed = False
         if self.mode_var.get() == "toggle":
-            self._set_status("Toggle mode active. Press Ctrl+Space or Ctrl+H to start and stop.")
+            self._set_status("Toggle mode active. Press Ctrl+Space to start and press again to stop.")
         else:
             self._set_status("Control mode active. Hold Ctrl+Space, release to transcribe and paste.")
+
+    def _on_view_changed(self) -> None:
+        if self.recorder_view_var.get() == "show":
+            self._set_status("Recorder popup enabled.")
+            if self.is_recording and (self.recording_popup is None or not self.recording_popup.winfo_exists()):
+                self._show_recording_popup()
+        else:
+            self._set_status("Background-only mode enabled. No popup while recording.")
+            if self.recording_popup is not None and self.recording_popup.winfo_exists():
+                self._hide_recording_popup()
 
     def _on_space_hotkey(self) -> None:
         # Control mode is handled by key-down/key-up events so release reliably stops.
@@ -336,12 +401,6 @@ class SuperFlowApp:
             self._stop_recording_and_transcribe()
         else:
             self._start_recording("space")
-
-    def _on_h_hotkey(self) -> None:
-        if self.is_recording:
-            self._stop_recording_and_transcribe()
-        else:
-            self._start_recording("h")
 
     def _on_escape_hotkey(self) -> None:
         if self.is_recording:
@@ -391,12 +450,11 @@ class SuperFlowApp:
                 self._set_status(f"Failed to start recording: {exc}")
                 return
             self.is_recording = True
-            self.recording_source = source
 
-        self._show_recording_popup(source)
-        if source == "h":
-            self._set_status("Recording from Ctrl+H popup. Press Space, Esc, or Exit to transcribe.")
-        elif self.mode_var.get() == "toggle":
+        if self.recorder_view_var.get() == "show":
+            self._show_recording_popup()
+
+        if self.mode_var.get() == "toggle":
             self._set_status("Listening. Press Ctrl+Space again to stop.")
         else:
             self._set_status("Listening. Release Ctrl+Space to stop.")
@@ -459,7 +517,6 @@ class SuperFlowApp:
             except Exception:
                 pass
         self.audio_frames = []
-        self.recording_source = ""
         self._set_status("Recording canceled.")
 
     def _transcribe_worker(self, audio: np.ndarray[Any, Any]) -> None:
@@ -549,7 +606,8 @@ class SuperFlowApp:
         if self.transcript_box is None:
             return
         self.transcript_box.configure(state="normal")
-        self.transcript_box.insert("end", f"[{timestamp}] {text}\n\n")
+        self.transcript_box.insert("end", f"{timestamp}  ", "time")
+        self.transcript_box.insert("end", f"{text}\n\n", "msg")
         self.transcript_box.see("end")
         self.transcript_box.configure(state="disabled")
 
@@ -614,7 +672,7 @@ class SuperFlowApp:
         self._set_status(f"Session PDF exported: {target}")
         return True
 
-    def _show_recording_popup(self, source: str) -> None:
+    def _show_recording_popup(self) -> None:
         if self.recording_popup is not None and self.recording_popup.winfo_exists():
             return
 
@@ -669,9 +727,7 @@ class SuperFlowApp:
 
         right = tk.Frame(footer, bg="#efefef")
         right.pack(side="right")
-        if source == "h":
-            stop_hint = "Space"
-        elif self.mode_var.get() == "control":
+        if self.mode_var.get() == "control":
             stop_hint = "Release"
         else:
             stop_hint = "Ctrl+Space"
@@ -733,8 +789,6 @@ class SuperFlowApp:
             pady=2,
         ).pack(side="left")
 
-        if source == "h":
-            popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
         popup.bind("<Escape>", lambda _e: self._stop_recording_and_transcribe())
         self.wave_canvas.bind("<Button-1>", lambda _e: self._stop_recording_and_transcribe())
 
@@ -750,7 +804,6 @@ class SuperFlowApp:
         self.recording_popup = None
         self.wave_canvas = None
         self.wave_rects = []
-        self.recording_source = ""
 
     def _tick_waveform(self) -> None:
         if self.recording_popup is None or not self.recording_popup.winfo_exists() or self.wave_canvas is None:

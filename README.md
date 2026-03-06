@@ -4,7 +4,7 @@ Super Flow is a free Windows dictation app plus a lightweight download landing p
 
 Core product goals implemented in this first version:
 - `Ctrl+Space` default hold-to-talk dictation flow with auto-paste at cursor on release.
-- `Ctrl+H` optional popup flow support.
+- Optional recorder popup visibility toggle (show popup or run in background only).
 - Toggle mode and control mode (hold-to-talk).
 - Local microphone selection.
 - Temporary session PDF generation with close warning and export option.
@@ -46,7 +46,7 @@ python app\main.py
 2. Select a microphone.
 3. Hold `Ctrl+Space` to start dictation.
 4. Release `Ctrl+Space` to stop and paste text.
-5. Optional: use `Ctrl+H` for popup-style recording flow.
+5. Optional: choose recorder visibility mode (`Show SuperFlow Recorder` or `Background only`).
 6. Use `Export Session PDF` anytime to save the current transcript.
 
 When closing the app, a warning appears so you can export the temporary session PDF before it is removed.
