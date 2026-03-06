@@ -32,9 +32,11 @@ from reportlab.pdfgen import canvas
 from tkinter import filedialog, messagebox, ttk
 
 APP_TITLE = "Super Flow"
-DEFAULT_MODEL = "small.en"
+DEFAULT_MODEL = "tiny.en"
 SAMPLE_RATE = 16000
 CHANNELS = 1
+TRANSCRIBE_BEAM_SIZE = 1
+TRANSCRIBE_VAD_FILTER = False
 INITIAL_PROMPT = (
     "The user is dictating software code, professional emails, and social posts. "
     "Preserve punctuation, symbols, and capitalization accurately."
@@ -166,6 +168,7 @@ class SuperFlowApp:
         self._build_ui()
         self._refresh_microphones()
         self._register_hotkeys()
+        threading.Thread(target=self._preload_model, daemon=True).start()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_ui(self) -> None:
@@ -467,16 +470,35 @@ class SuperFlowApp:
             segments, _ = model.transcribe(
                 audio,
                 language="en",
-                beam_size=5,
-                vad_filter=True,
+                beam_size=TRANSCRIBE_BEAM_SIZE,
+                vad_filter=TRANSCRIBE_VAD_FILTER,
                 condition_on_previous_text=False,
-                initial_prompt=INITIAL_PROMPT,
+                without_timestamps=True,
             )
             segments = list(segments)
             text = " ".join(segment.text.strip() for segment in segments).strip()
         except Exception as exc:
             error = str(exc)
         self.root.after(0, lambda: self._on_transcription_complete(text, error))
+
+    def _preload_model(self) -> None:
+        try:
+            model = self._load_model()
+            # Run a tiny warm-up inference to reduce first real transcription latency.
+            warm_audio = np.zeros(SAMPLE_RATE // 6, dtype=np.float32)
+            warm_segments, _ = model.transcribe(
+                warm_audio,
+                language="en",
+                beam_size=TRANSCRIBE_BEAM_SIZE,
+                vad_filter=False,
+                condition_on_previous_text=False,
+                without_timestamps=True,
+            )
+            list(warm_segments)
+            self._set_status("Ready. Hold Ctrl+Space, then release to transcribe and paste at cursor.")
+        except Exception:
+            # Keep startup resilient even if model warm-up fails.
+            pass
 
     def _resample_to_whisper_rate(self, audio: np.ndarray[Any, Any], source_rate: int) -> np.ndarray[Any, Any]:
         if source_rate == SAMPLE_RATE or audio.size == 0:
@@ -493,7 +515,7 @@ class SuperFlowApp:
         with self.model_lock:
             if self.model is not None:
                 return self.model
-            self._set_status("Loading speech model locally on CPU (free mode). First run may take 1-2 minutes.")
+            self._set_status("Loading low-latency speech model locally (free mode)...")
             # faster-whisper on Windows requires CUDA libs only for GPU.
             # Force CPU first so missing cublas/cudnn DLLs do not break startup.
             for compute_type in ("int8", "float32"):
