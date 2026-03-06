@@ -1,14 +1,16 @@
 :root {
   --bg-a: #f7efe4;
   --bg-b: #edf7fa;
-  --ink: #132640;
-  --ink-soft: #375273;
-  --line: rgba(19, 38, 64, 0.1);
+  --ink: #0d0d0d;
+  --ink-soft: #3a3a3a;
+  --line: rgba(13, 13, 13, 0.1);
   --accent: #ff6d37;
 }
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html,
@@ -56,7 +58,7 @@ body {
   z-index: 1;
   width: min(1280px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 1.1rem 0 1.3rem;
+  padding: 2.2rem 0 1.3rem;
 }
 
 .topbar {
@@ -81,7 +83,7 @@ body {
 
 .tabs a {
   text-decoration: none;
-  color: #223c5d;
+  color: #0d0d0d;
   font-weight: 600;
   font-size: 0.98rem;
 }

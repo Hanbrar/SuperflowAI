@@ -762,13 +762,13 @@ class SuperFlowApp:
         self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#0d0d0d", highlightthickness=0)
         self.wave_canvas.pack(fill="x")
 
-        # Subtle warm gradient background on wave canvas
+        # Amber radial gradient background: black edges, warm glow at center
         for y in range(108):
-            center_dist = abs(y - 54) / 54
-            warmth = max(0.0, 0.09 * (1.0 - center_dist))
-            r_bg = min(255, int(13 + 50 * warmth))
-            g_bg = min(255, int(13 + 15 * warmth))
-            b_bg = 13
+            center_dist_y = abs(y - 54) / 54
+            glow = max(0.0, 1.0 - center_dist_y ** 0.7)
+            r_bg = min(255, int(170 * glow))
+            g_bg = min(255, int(72 * glow))
+            b_bg = min(255, int(8 * glow))
             self.wave_canvas.create_line(0, y, 4000, y, fill=f"#{r_bg:02x}{g_bg:02x}{b_bg:02x}")
 
         self.wave_rects.clear()
@@ -780,12 +780,7 @@ class SuperFlowApp:
         for i in range(bar_count):
             x1 = start_x + (i * (bar_w + gap))
             x2 = x1 + bar_w
-            center_dist = abs((bar_count / 2) - i) / (bar_count / 2)
-            r = max(0, min(255, int(255 - center_dist * 55)))
-            g = max(0, min(255, int(130 - center_dist * 65)))
-            b = max(0, min(255, int(55 - center_dist * 30)))
-            color = f"#{r:02x}{g:02x}{b:02x}"
-            rect = self.wave_canvas.create_rectangle(x1, 54, x2, 54, fill=color, width=0)
+            rect = self.wave_canvas.create_rectangle(x1, 54, x2, 54, fill="#000000", width=0)
             self.wave_rects.append(rect)
 
         divider = tk.Frame(box, bg="#1e1e1e", height=1)
