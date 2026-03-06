@@ -762,12 +762,12 @@ class SuperFlowApp:
         self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#f7efe4", highlightthickness=0)
         self.wave_canvas.pack(fill="x")
 
-        # Website-matching warm gradient: left warm peach → right light blue-cream
+        # Very subtle warm-to-cream gradient — just enough depth, no visible split
         for x in range(980):
             t = x / 980
-            r_bg = min(255, int(247 + (237 - 247) * t))
-            g_bg = min(255, int(239 + (247 - 239) * t))
-            b_bg = min(255, int(228 + (250 - 228) * t))
+            r_bg = min(255, int(247 + (244 - 247) * t))
+            g_bg = min(255, int(239 + (240 - 239) * t))
+            b_bg = min(255, int(228 + (234 - 228) * t))
             self.wave_canvas.create_line(x, 0, x, 108, fill=f"#{r_bg:02x}{g_bg:02x}{b_bg:02x}")
 
         self.wave_rects.clear()
