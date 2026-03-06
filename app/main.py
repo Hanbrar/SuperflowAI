@@ -678,117 +678,106 @@ class SuperFlowApp:
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
-        popup.geometry("980x250")
-        popup.minsize(980, 250)
-        popup.configure(bg="#f5f5f5")
+        popup.geometry("980x244")
+        popup.minsize(980, 244)
+        popup.configure(bg="#0b1220")
         popup.attributes("-topmost", True)
         popup.resizable(False, False)
         popup.protocol("WM_DELETE_WINDOW", self._cancel_recording)
 
-        box = tk.Frame(popup, bg="#efefef", highlightthickness=1, highlightbackground="#d9d9d9")
+        box = tk.Frame(popup, bg="#0f1728", highlightthickness=1, highlightbackground="#25344e")
         box.pack(fill="both", expand=True, padx=14, pady=14)
 
-        self.wave_canvas = tk.Canvas(box, height=118, bg="#efefef", highlightthickness=0)
-        self.wave_canvas.pack(fill="x", padx=36, pady=(20, 10))
+        wave_wrap = tk.Frame(box, bg="#0f1728")
+        wave_wrap.pack(fill="x", padx=26, pady=(16, 8))
+        self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#0f1728", highlightthickness=0)
+        self.wave_canvas.pack(fill="x")
         self.wave_rects.clear()
-        bar_count = 80
-        bar_w = 6
+        bar_count = 86
+        bar_w = 5
         gap = 5
         total = (bar_count * bar_w) + ((bar_count - 1) * gap)
-        start_x = max(10, int((900 - total) / 2))
+        start_x = max(10, int((920 - total) / 2))
         for i in range(bar_count):
             x1 = start_x + (i * (bar_w + gap))
             x2 = x1 + bar_w
             center_dist = abs((bar_count / 2) - i) / (bar_count / 2)
-            shade = int(65 + (center_dist * 120))
-            color = f"#{shade:02x}{shade:02x}{shade:02x}"
-            rect = self.wave_canvas.create_rectangle(x1, 68, x2, 68, fill=color, width=0)
+            shade = int(214 - (center_dist * 90))
+            color = f"#{shade:02x}{shade:02x}{min(255, shade + 14):02x}"
+            rect = self.wave_canvas.create_rectangle(x1, 54, x2, 54, fill=color, width=0)
             self.wave_rects.append(rect)
 
-        divider = tk.Frame(box, bg="#e1e1e1", height=2)
+        divider = tk.Frame(box, bg="#24334d", height=1)
         divider.pack(fill="x", padx=0, pady=(8, 0))
 
-        footer = tk.Frame(box, bg="#efefef")
-        footer.pack(fill="x", padx=24, pady=(12, 12))
+        footer = tk.Frame(box, bg="#101a2d")
+        footer.pack(fill="x", padx=0, pady=(0, 0))
 
-        left = tk.Frame(footer, bg="#efefef")
-        left.pack(side="left")
-        dot = tk.Canvas(left, width=18, height=18, bg="#efefef", highlightthickness=0)
+        left = tk.Frame(footer, bg="#101a2d")
+        left.pack(side="left", padx=20, pady=14)
+        dot = tk.Canvas(left, width=16, height=16, bg="#101a2d", highlightthickness=0)
         dot.pack(side="left", padx=(0, 10))
-        dot.create_oval(2, 2, 16, 16, fill="#ff2f2f", outline="")
+        dot.create_oval(3, 3, 13, 13, fill="#ff4b43", outline="")
 
         tk.Label(
             left,
             text="Recording",
-            fg="#4a4a4a",
-            bg="#efefef",
-            font=("Segoe UI Semibold", 16),
+            fg="#ecf2ff",
+            bg="#101a2d",
+            font=("Segoe UI Semibold", 15),
         ).pack(side="left")
 
-        right = tk.Frame(footer, bg="#efefef")
-        right.pack(side="right")
+        right = tk.Frame(footer, bg="#101a2d")
+        right.pack(side="right", padx=20, pady=12)
         if self.mode_var.get() == "control":
             stop_hint = "Release"
         else:
             stop_hint = "Ctrl+Space"
-        tk.Button(
+        tk.Label(
             right,
             text="Stop",
-            command=self._stop_recording_and_transcribe,
-            fg="#666666",
-            bg="#efefef",
-            activebackground="#e6e6e6",
-            activeforeground="#3d3d3d",
-            relief="flat",
-            borderwidth=0,
-            font=("Segoe UI", 18),
-            padx=0,
-            pady=0,
+            fg="#9dafcc",
+            bg="#101a2d",
+            font=("Segoe UI", 16),
         ).pack(side="left", padx=(0, 10))
         tk.Button(
             right,
             text=stop_hint,
             command=self._stop_recording_and_transcribe,
-            fg="#4f4f4f",
-            bg="#d9d9d9",
-            activebackground="#cdcdcd",
-            activeforeground="#343434",
+            fg="#edf3ff",
+            bg="#2a3d63",
+            activebackground="#334b7b",
+            activeforeground="#ffffff",
             relief="flat",
             borderwidth=0,
-            font=("Segoe UI Semibold", 24),
-            padx=16,
-            pady=2,
+            font=("Segoe UI Semibold", 18),
+            padx=14,
+            pady=4,
         ).pack(side="left")
-        tk.Label(right, text="|", fg="#c4c4c4", bg="#efefef", font=("Segoe UI", 20)).pack(side="left", padx=20)
-        tk.Button(
+        tk.Label(right, text="|", fg="#415574", bg="#101a2d", font=("Segoe UI", 18)).pack(side="left", padx=18)
+        tk.Label(
             right,
             text="Exit",
-            command=self._stop_recording_and_transcribe,
-            fg="#666666",
-            bg="#efefef",
-            activebackground="#e6e6e6",
-            activeforeground="#3d3d3d",
-            relief="flat",
-            borderwidth=0,
-            font=("Segoe UI", 18),
-            padx=0,
-            pady=0,
+            fg="#9dafcc",
+            bg="#101a2d",
+            font=("Segoe UI", 16),
         ).pack(side="left", padx=(0, 10))
         tk.Button(
             right,
             text="Esc",
             command=self._stop_recording_and_transcribe,
-            fg="#4f4f4f",
-            bg="#d9d9d9",
-            activebackground="#cdcdcd",
-            activeforeground="#343434",
+            fg="#ffeef1",
+            bg="#5a2940",
+            activebackground="#6f3150",
+            activeforeground="#ffffff",
             relief="flat",
             borderwidth=0,
-            font=("Segoe UI Semibold", 20),
+            font=("Segoe UI Semibold", 18),
             padx=14,
-            pady=2,
+            pady=4,
         ).pack(side="left")
 
+        popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
         popup.bind("<Escape>", lambda _e: self._stop_recording_and_transcribe())
         self.wave_canvas.bind("<Button-1>", lambda _e: self._stop_recording_and_transcribe())
 
@@ -808,8 +797,8 @@ class SuperFlowApp:
     def _tick_waveform(self) -> None:
         if self.recording_popup is None or not self.recording_popup.winfo_exists() or self.wave_canvas is None:
             return
-        base = 8
-        amp = max(6.0, min(52.0, self.audio_level * 60.0))
+        base = 7
+        amp = max(5.0, min(44.0, self.audio_level * 54.0))
         count = len(self.wave_rects)
         for i, rect in enumerate(self.wave_rects):
             center_falloff = 1.0 - (abs((count / 2) - i) / (count / 2))
@@ -817,7 +806,7 @@ class SuperFlowApp:
             jitter = random.uniform(-1.4, 1.4)
             h = base + (amp * center_falloff * wobble) + jitter
             x1, _y1, x2, _y2 = self.wave_canvas.coords(rect)
-            mid = 62
+            mid = 54
             top = mid - h
             bot = mid + h
             self.wave_canvas.coords(rect, x1, top, x2, bot)
