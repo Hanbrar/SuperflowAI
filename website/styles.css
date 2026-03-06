@@ -71,18 +71,16 @@ body {
 
 .hero-logo-wrap {
   width: fit-content;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(19, 38, 63, 0.08);
-  padding: 0.6rem 1rem;
+  padding: 0;
 }
 
 .hero-logo {
-  width: clamp(170px, 24vw, 320px);
+  width: clamp(260px, 40vw, 540px);
   max-width: 100%;
   height: auto;
   object-fit: contain;
   display: block;
+  filter: drop-shadow(0 8px 22px rgba(255, 108, 55, 0.18));
 }
 
 .eyebrow {
@@ -221,4 +219,3 @@ h1 {
     grid-column: span 12;
   }
 }
-
