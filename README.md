@@ -1,6 +1,6 @@
 # Super Flow
 
-![Super Flow Logo](logo.png)
+<img src="logo.png" alt="Super Flow Logo" width="220">
 
 Super Flow is a free Windows dictation app plus a lightweight download landing page.
 
