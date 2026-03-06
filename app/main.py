@@ -122,9 +122,9 @@ class SuperFlowApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title(APP_TITLE)
-        self.root.geometry("720x860")
-        self.root.minsize(680, 780)
-        self.root.configure(bg="#f2f5fa")
+        self.root.geometry("860x960")
+        self.root.minsize(760, 860)
+        self.root.configure(bg="#f5ede3")
 
         self.status_var = tk.StringVar(
             value="Ready. Hold Ctrl+Space, speak, release, and paste instantly."
@@ -160,6 +160,7 @@ class SuperFlowApp:
         self.wave_rects: list[int] = []
         self.wave_timer: str | None = None
         self.audio_level = 0.0
+        self._entry_count: int = 0
 
         self._build_ui()
         self._refresh_microphones()
@@ -170,16 +171,16 @@ class SuperFlowApp:
     def _build_ui(self) -> None:
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("TFrame", background="#f2f5fa")
-        style.configure("TLabel", background="#f2f5fa", foreground="#15233c", font=("Segoe UI", 10))
-        style.configure("Title.TLabel", font=("Segoe UI Semibold", 28), foreground="#101f3a")
-        style.configure("Subtitle.TLabel", font=("Segoe UI", 11), foreground="#43516a")
+        style.configure("TFrame", background="#f5ede3")
+        style.configure("TLabel", background="#f5ede3", foreground="#132640", font=("Segoe UI", 10))
+        style.configure("Title.TLabel", font=("Segoe UI Semibold", 28), foreground="#132640")
+        style.configure("Subtitle.TLabel", font=("Segoe UI", 11), foreground="#375273")
         style.configure("TButton", padding=9, font=("Segoe UI Semibold", 10))
 
         outer = ttk.Frame(self.root, padding=20)
         outer.pack(fill="both", expand=True)
 
-        self._build_logo(outer)
+        self._build_header(outer)
 
         ttk.Label(outer, text="Super Flow", style="Title.TLabel", anchor="center").pack(pady=(10, 2))
         ttk.Label(
@@ -193,7 +194,7 @@ class SuperFlowApp:
             outer,
             bg="#ffffff",
             highlightthickness=1,
-            highlightbackground="#d7dfea",
+            highlightbackground="#e0d5c8",
             padx=14,
             pady=14,
         )
@@ -201,14 +202,19 @@ class SuperFlowApp:
 
         mic_row = tk.Frame(control_card, bg="#ffffff")
         mic_row.pack(fill="x", pady=(0, 10))
-        tk.Label(mic_row, text="Microphone", bg="#ffffff", fg="#2f3f58", font=("Segoe UI Semibold", 10)).pack(side="left")
+        tk.Label(mic_row, text="Microphone", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
         self.mic_combo = ttk.Combobox(mic_row, textvariable=self.mic_var, state="readonly", width=52)
         self.mic_combo.pack(side="left", padx=8, fill="x", expand=True)
-        ttk.Button(mic_row, text="Refresh", command=self._refresh_microphones).pack(side="left")
+        tk.Button(
+            mic_row, text="Refresh", command=self._refresh_microphones,
+            bg="#f5ede3", fg="#132640", activebackground="#e8ddd0", activeforeground="#132640",
+            relief="flat", highlightthickness=1, highlightbackground="#c8bfb5",
+            font=("Segoe UI Semibold", 10), padx=10, pady=5, cursor="hand2",
+        ).pack(side="left")
 
         mode_row = tk.Frame(control_card, bg="#ffffff")
         mode_row.pack(fill="x", pady=(0, 6))
-        tk.Label(mode_row, text="Activation mode", bg="#ffffff", fg="#2f3f58", font=("Segoe UI Semibold", 10)).pack(side="left")
+        tk.Label(mode_row, text="Activation mode", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
         ttk.Radiobutton(mode_row, text="Toggle", value="toggle", variable=self.mode_var, command=self._on_mode_changed).pack(
             side="left", padx=(12, 0)
         )
@@ -222,7 +228,7 @@ class SuperFlowApp:
 
         view_row = tk.Frame(control_card, bg="#ffffff")
         view_row.pack(fill="x", pady=(0, 6))
-        tk.Label(view_row, text="Recorder view", bg="#ffffff", fg="#2f3f58", font=("Segoe UI Semibold", 10)).pack(side="left")
+        tk.Label(view_row, text="Recorder view", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
         ttk.Radiobutton(
             view_row,
             text="Show SuperFlow Recorder",
@@ -247,15 +253,29 @@ class SuperFlowApp:
 
         action_row = tk.Frame(control_card, bg="#ffffff")
         action_row.pack(fill="x")
-        ttk.Button(action_row, text="Export Session PDF", command=self._export_session_pdf).pack(side="left")
-        ttk.Button(action_row, text="Copy Last Transcript", command=self._copy_last_transcript).pack(side="left", padx=8)
-        ttk.Button(action_row, text="Clear Session", command=self._clear_session).pack(side="left")
+        tk.Button(
+            action_row, text="Export Session PDF", command=self._export_session_pdf,
+            bg="#ff6d37", fg="#ffffff", activebackground="#e85d28", activeforeground="#ffffff",
+            relief="flat", borderwidth=0, font=("Segoe UI Semibold", 10), padx=14, pady=7, cursor="hand2",
+        ).pack(side="left")
+        tk.Button(
+            action_row, text="Copy Last Transcript", command=self._copy_last_transcript,
+            bg="#ffffff", fg="#132640", activebackground="#f5ede3", activeforeground="#132640",
+            relief="flat", highlightthickness=1, highlightbackground="#c8bfb5",
+            font=("Segoe UI Semibold", 10), padx=14, pady=7, cursor="hand2",
+        ).pack(side="left", padx=8)
+        tk.Button(
+            action_row, text="Clear Session", command=self._clear_session,
+            bg="#ffffff", fg="#c0392b", activebackground="#fef2f2", activeforeground="#c0392b",
+            relief="flat", highlightthickness=1, highlightbackground="#c8bfb5",
+            font=("Segoe UI Semibold", 10), padx=14, pady=7, cursor="hand2",
+        ).pack(side="left")
 
         status_card = tk.Frame(
             outer,
             bg="#ffffff",
             highlightthickness=1,
-            highlightbackground="#d7dfea",
+            highlightbackground="#e0d5c8",
             padx=14,
             pady=14,
         )
@@ -265,7 +285,7 @@ class SuperFlowApp:
             textvariable=self.status_var,
             wraplength=640,
             bg="#ffffff",
-            fg="#334965",
+            fg="#375273",
             font=("Segoe UI", 10),
             anchor="w",
             justify="left",
@@ -275,16 +295,16 @@ class SuperFlowApp:
             outer,
             bg="#ffffff",
             highlightthickness=1,
-            highlightbackground="#d7dfea",
+            highlightbackground="#e0d5c8",
             padx=14,
             pady=14,
         )
         transcript_card.pack(fill="both", expand=True)
         tk.Label(
             transcript_card,
-            text="Session Transcript (temporary)",
+            text="Session Transcript",
             bg="#ffffff",
-            fg="#2f3f58",
+            fg="#132640",
             font=("Segoe UI Semibold", 11),
         ).pack(anchor="w", pady=(0, 8))
 
@@ -295,15 +315,15 @@ class SuperFlowApp:
             height=14,
             wrap="word",
             state="disabled",
-            bg="#f7f9fc",
-            fg="#1e2e46",
+            bg="#fdf8f4",
+            fg="#132640",
             font=("Segoe UI", 10),
             relief="flat",
             padx=10,
             pady=10,
         )
-        self.transcript_box.tag_configure("time", foreground="#76839a", font=("Consolas", 9, "bold"))
-        self.transcript_box.tag_configure("msg", foreground="#1e2e46", font=("Segoe UI", 10))
+        self.transcript_box.tag_configure("time", foreground="#a07f5a", font=("Consolas", 9, "bold"))
+        self.transcript_box.tag_configure("msg", foreground="#132640", font=("Segoe UI", 10))
         scroll = ttk.Scrollbar(transcript_inner, orient="vertical", command=self.transcript_box.yview)
         self.transcript_box.configure(yscrollcommand=scroll.set)
         self.transcript_box.pack(side="left", fill="both", expand=True)
@@ -320,20 +340,40 @@ class SuperFlowApp:
         twitter_link.pack(side="left")
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
-    def _build_logo(self, parent: ttk.Frame) -> None:
+    def _build_header(self, parent: ttk.Frame) -> None:
+        canvas_h = 180
+        header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0)
+        header.pack(fill="x")
+
+        # Warm gradient: orange glow at top fading to cream
+        for y in range(canvas_h):
+            t = y / canvas_h
+            glow = max(0.0, 0.30 * (1.0 - t * 1.7))
+            r_v = min(255, int(247 + (255 - 247) * glow + (245 - 247) * t * 0.4))
+            g_v = min(255, int(239 - int(39 * glow * 0.4) + (237 - 239) * t * 0.4))
+            b_v = min(255, int(228 - int(228 * glow * 0.38) + (227 - 228) * t * 0.4))
+            header.create_line(0, y, 4000, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}")
+
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
         if not logo_path.exists():
             return
         try:
             image = Image.open(logo_path).convert("RGBA")
-            alpha = image.getchannel("A")
-            bbox = alpha.getbbox()
-            if bbox is not None:
+            # Strip white/near-white background
+            data = np.array(image, dtype=np.uint8)
+            white = (data[:, :, 0] > 238) & (data[:, :, 1] > 238) & (data[:, :, 2] > 238) & (data[:, :, 3] > 10)
+            data[white, 3] = 0
+            image = Image.fromarray(data, "RGBA")
+            bbox = image.getchannel("A").getbbox()
+            if bbox:
                 image = image.crop(bbox)
-            image.thumbnail((360, 170), Image.Resampling.LANCZOS)
+            image.thumbnail((340, 160), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            holder = tk.Label(parent, image=self.logo_photo, bg="#f2f5fa", bd=0, highlightthickness=0)
-            holder.pack()
+            logo_id = header.create_image(400, canvas_h // 2, image=self.logo_photo, anchor="center")
+            header.bind(
+                "<Configure>",
+                lambda e, lid=logo_id, ch=canvas_h: header.coords(lid, e.width // 2, ch // 2),
+            )
         except Exception:
             pass
 
@@ -605,9 +645,31 @@ class SuperFlowApp:
     def _append_transcript_entry(self, timestamp: str, text: str) -> None:
         if self.transcript_box is None:
             return
+        entry_tag = f"entry_{self._entry_count}"
+        self._entry_count += 1
         self.transcript_box.configure(state="normal")
         self.transcript_box.insert("end", f"{timestamp}  ", "time")
-        self.transcript_box.insert("end", f"{text}\n\n", "msg")
+        self.transcript_box.insert("end", f"{text}  ", ("msg", entry_tag))
+        self.transcript_box.tag_bind(entry_tag, "<Button-1>", lambda _e, t=text: self._copy_entry_text(t))
+        self.transcript_box.tag_bind(entry_tag, "<Enter>", lambda _e: self.transcript_box.configure(cursor="hand2"))
+        self.transcript_box.tag_bind(entry_tag, "<Leave>", lambda _e: self.transcript_box.configure(cursor=""))
+        copy_btn = tk.Button(
+            self.transcript_box,
+            text="⧉",
+            fg="#c8a878",
+            bg="#fdf8f4",
+            activeforeground="#ff6d37",
+            activebackground="#fdf8f4",
+            relief="flat",
+            borderwidth=0,
+            padx=3,
+            pady=0,
+            font=("Segoe UI", 10),
+            cursor="hand2",
+            command=lambda t=text: self._copy_entry_text(t),
+        )
+        self.transcript_box.window_create("end", window=copy_btn)
+        self.transcript_box.insert("end", "\n\n", "msg")
         self.transcript_box.see("end")
         self.transcript_box.configure(state="disabled")
 
@@ -638,6 +700,13 @@ class SuperFlowApp:
         try:
             pyperclip.copy(self.last_transcript)
             self._set_status("Last transcript copied.")
+        except Exception as exc:
+            self._set_status(f"Copy failed: {exc}")
+
+    def _copy_entry_text(self, text: str) -> None:
+        try:
+            pyperclip.copy(text)
+            self._set_status("Copied to clipboard.")
         except Exception as exc:
             self._set_status(f"Copy failed: {exc}")
 
@@ -680,18 +749,28 @@ class SuperFlowApp:
         popup.title("Super Flow Recorder")
         popup.geometry("980x244")
         popup.minsize(980, 244)
-        popup.configure(bg="#0b1220")
+        popup.configure(bg="#0a0a0a")
         popup.attributes("-topmost", True)
         popup.resizable(False, False)
         popup.protocol("WM_DELETE_WINDOW", self._cancel_recording)
 
-        box = tk.Frame(popup, bg="#0f1728", highlightthickness=1, highlightbackground="#25344e")
+        box = tk.Frame(popup, bg="#111111", highlightthickness=1, highlightbackground="#222222")
         box.pack(fill="both", expand=True, padx=14, pady=14)
 
-        wave_wrap = tk.Frame(box, bg="#0f1728")
+        wave_wrap = tk.Frame(box, bg="#111111")
         wave_wrap.pack(fill="x", padx=26, pady=(16, 8))
-        self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#0f1728", highlightthickness=0)
+        self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#0d0d0d", highlightthickness=0)
         self.wave_canvas.pack(fill="x")
+
+        # Subtle warm gradient background on wave canvas
+        for y in range(108):
+            center_dist = abs(y - 54) / 54
+            warmth = max(0.0, 0.09 * (1.0 - center_dist))
+            r_bg = min(255, int(13 + 50 * warmth))
+            g_bg = min(255, int(13 + 15 * warmth))
+            b_bg = 13
+            self.wave_canvas.create_line(0, y, 4000, y, fill=f"#{r_bg:02x}{g_bg:02x}{b_bg:02x}")
+
         self.wave_rects.clear()
         bar_count = 86
         bar_w = 5
@@ -702,32 +781,34 @@ class SuperFlowApp:
             x1 = start_x + (i * (bar_w + gap))
             x2 = x1 + bar_w
             center_dist = abs((bar_count / 2) - i) / (bar_count / 2)
-            shade = int(214 - (center_dist * 90))
-            color = f"#{shade:02x}{shade:02x}{min(255, shade + 14):02x}"
+            r = max(0, min(255, int(255 - center_dist * 55)))
+            g = max(0, min(255, int(130 - center_dist * 65)))
+            b = max(0, min(255, int(55 - center_dist * 30)))
+            color = f"#{r:02x}{g:02x}{b:02x}"
             rect = self.wave_canvas.create_rectangle(x1, 54, x2, 54, fill=color, width=0)
             self.wave_rects.append(rect)
 
-        divider = tk.Frame(box, bg="#24334d", height=1)
+        divider = tk.Frame(box, bg="#1e1e1e", height=1)
         divider.pack(fill="x", padx=0, pady=(8, 0))
 
-        footer = tk.Frame(box, bg="#101a2d")
+        footer = tk.Frame(box, bg="#0a0a0a")
         footer.pack(fill="x", padx=0, pady=(0, 0))
 
-        left = tk.Frame(footer, bg="#101a2d")
+        left = tk.Frame(footer, bg="#0a0a0a")
         left.pack(side="left", padx=20, pady=14)
-        dot = tk.Canvas(left, width=16, height=16, bg="#101a2d", highlightthickness=0)
+        dot = tk.Canvas(left, width=16, height=16, bg="#0a0a0a", highlightthickness=0)
         dot.pack(side="left", padx=(0, 10))
         dot.create_oval(3, 3, 13, 13, fill="#ff4b43", outline="")
 
         tk.Label(
             left,
             text="Recording",
-            fg="#ecf2ff",
-            bg="#101a2d",
+            fg="#ffffff",
+            bg="#0a0a0a",
             font=("Segoe UI Semibold", 15),
         ).pack(side="left")
 
-        right = tk.Frame(footer, bg="#101a2d")
+        right = tk.Frame(footer, bg="#0a0a0a")
         right.pack(side="right", padx=20, pady=12)
         if self.mode_var.get() == "control":
             stop_hint = "Release"
@@ -736,17 +817,17 @@ class SuperFlowApp:
         tk.Label(
             right,
             text="Stop",
-            fg="#9dafcc",
-            bg="#101a2d",
+            fg="#888888",
+            bg="#0a0a0a",
             font=("Segoe UI", 16),
         ).pack(side="left", padx=(0, 10))
         tk.Button(
             right,
             text=stop_hint,
             command=self._stop_recording_and_transcribe,
-            fg="#edf3ff",
-            bg="#2a3d63",
-            activebackground="#334b7b",
+            fg="#ffffff",
+            bg="#ff6d37",
+            activebackground="#e85d28",
             activeforeground="#ffffff",
             relief="flat",
             borderwidth=0,
@@ -754,21 +835,21 @@ class SuperFlowApp:
             padx=14,
             pady=4,
         ).pack(side="left")
-        tk.Label(right, text="|", fg="#415574", bg="#101a2d", font=("Segoe UI", 18)).pack(side="left", padx=18)
+        tk.Label(right, text="|", fg="#333333", bg="#0a0a0a", font=("Segoe UI", 18)).pack(side="left", padx=18)
         tk.Label(
             right,
             text="Exit",
-            fg="#9dafcc",
-            bg="#101a2d",
+            fg="#888888",
+            bg="#0a0a0a",
             font=("Segoe UI", 16),
         ).pack(side="left", padx=(0, 10))
         tk.Button(
             right,
             text="Esc",
             command=self._stop_recording_and_transcribe,
-            fg="#ffeef1",
-            bg="#5a2940",
-            activebackground="#6f3150",
+            fg="#ffffff",
+            bg="#333333",
+            activebackground="#444444",
             activeforeground="#ffffff",
             relief="flat",
             borderwidth=0,
