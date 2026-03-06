@@ -128,8 +128,10 @@ class SuperFlowApp:
         self.root.minsize(600, 740)
         self.root.configure(bg="#f7f3ea")
 
-        self.status_var = tk.StringVar(value="Ready. Press Ctrl+H to dictate. Ctrl+Space stays as fallback.")
-        self.mode_var = tk.StringVar(value="toggle")
+        self.status_var = tk.StringVar(
+            value="Ready. Hold Ctrl+Space, then release to transcribe and paste at cursor."
+        )
+        self.mode_var = tk.StringVar(value="control")
         self.mic_var = tk.StringVar(value="")
 
         self.model: WhisperModel | None = None
@@ -214,8 +216,8 @@ class SuperFlowApp:
         ttk.Label(
             control_card,
             text=(
-                "Default hotkey: Ctrl+H to start/stop with popup. "
-                "Ctrl+Space also works. Esc cancels active recording."
+                "Default hotkey: Ctrl+Space in Control mode. Hold to speak, release to paste. "
+                "Ctrl+H still opens the popup flow."
             ),
             wraplength=580,
             style="Subtitle.TLabel",
@@ -317,9 +319,9 @@ class SuperFlowApp:
 
     def _on_mode_changed(self) -> None:
         if self.mode_var.get() == "toggle":
-            self._set_status("Toggle mode active. Ctrl+H is default; Ctrl+Space also works.")
+            self._set_status("Toggle mode active. Press Ctrl+Space or Ctrl+H to start and stop.")
         else:
-            self._set_status("Control mode active. Hold Ctrl+Space to record, release to transcribe.")
+            self._set_status("Control mode active. Hold Ctrl+Space, release to transcribe and paste.")
 
     def _on_space_hotkey(self) -> None:
         if self.mode_var.get() == "control":
@@ -339,7 +341,7 @@ class SuperFlowApp:
 
     def _on_escape_hotkey(self) -> None:
         if self.is_recording:
-            self._cancel_recording()
+            self._stop_recording_and_transcribe()
 
     def _on_key_event(self, event: keyboard.KeyboardEvent) -> None:
         if self.mode_var.get() != "control":
@@ -388,7 +390,7 @@ class SuperFlowApp:
 
         self._show_recording_popup()
         if source == "h":
-            self._set_status("Recording from Ctrl+H popup. Press Ctrl+Space or Stop to transcribe.")
+            self._set_status("Recording from Ctrl+H popup. Press Space, Esc, or Exit to transcribe.")
         elif self.mode_var.get() == "toggle":
             self._set_status("Listening. Press Ctrl+Space again to stop.")
         else:
@@ -644,7 +646,7 @@ class SuperFlowApp:
         right.pack(side="right")
         tk.Button(
             right,
-            text="Stop",
+            text="Exit",
             command=self._stop_recording_and_transcribe,
             fg="#666666",
             bg="#efefef",
@@ -658,7 +660,7 @@ class SuperFlowApp:
         ).pack(side="left", padx=(0, 10))
         tk.Button(
             right,
-            text="\\Space",
+            text="Space",
             command=self._stop_recording_and_transcribe,
             fg="#4f4f4f",
             bg="#d9d9d9",
@@ -673,8 +675,8 @@ class SuperFlowApp:
         tk.Label(right, text="|", fg="#c4c4c4", bg="#efefef", font=("Segoe UI", 20)).pack(side="left", padx=20)
         tk.Button(
             right,
-            text="Cancel",
-            command=self._cancel_recording,
+            text="Exit",
+            command=self._stop_recording_and_transcribe,
             fg="#666666",
             bg="#efefef",
             activebackground="#e6e6e6",
@@ -688,7 +690,7 @@ class SuperFlowApp:
         tk.Button(
             right,
             text="Esc",
-            command=self._cancel_recording,
+            command=self._stop_recording_and_transcribe,
             fg="#4f4f4f",
             bg="#d9d9d9",
             activebackground="#cdcdcd",
@@ -701,7 +703,7 @@ class SuperFlowApp:
         ).pack(side="left")
 
         popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
-        popup.bind("<Escape>", lambda _e: self._cancel_recording())
+        popup.bind("<Escape>", lambda _e: self._stop_recording_and_transcribe())
         self.wave_canvas.bind("<Button-1>", lambda _e: self._stop_recording_and_transcribe())
 
         self.recording_popup = popup
