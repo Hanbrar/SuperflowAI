@@ -29,6 +29,7 @@ from huggingface_hub.utils import logging as hf_logging
 from PIL import Image, ImageTk
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from tkinter import font as tkfont
 from tkinter import filedialog, messagebox, ttk
 
 APP_TITLE = "Super Flow"
@@ -118,6 +119,118 @@ class SessionPDFManager:
         pdf.save()
 
 
+class ModernButton(tk.Canvas):
+    def __init__(
+        self,
+        parent: tk.Misc,
+        text: str,
+        command: Any,
+        *,
+        width: int = 170,
+        height: int = 46,
+        radius: int = 18,
+        fill: str = "#132640",
+        hover_fill: str = "#203756",
+        active_fill: str = "#0d1f35",
+        text_fill: str = "#ffffff",
+        border_fill: str = "",
+        font: tuple[str, int] = ("Segoe UI Semibold", 10),
+    ) -> None:
+        bg = parent.cget("bg") if hasattr(parent, "cget") else "#ffffff"
+        super().__init__(
+            parent,
+            width=width,
+            height=height,
+            bg=bg,
+            highlightthickness=0,
+            bd=0,
+            relief="flat",
+            cursor="hand2",
+            takefocus=1,
+        )
+        self.command = command
+        self.text = text
+        self.width = width
+        self.height = height
+        self.radius = radius
+        self.fill = fill
+        self.hover_fill = hover_fill
+        self.active_fill = active_fill
+        self.text_fill = text_fill
+        self.border_fill = border_fill
+        self.font = tkfont.Font(family=font[0], size=font[1], weight="bold")
+        self._pressed = False
+
+        self._draw(fill)
+
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        self.bind("<ButtonPress-1>", self._on_press)
+        self.bind("<ButtonRelease-1>", self._on_release)
+        self.bind("<KeyPress-Return>", lambda _e: self._invoke())
+        self.bind("<KeyPress-space>", lambda _e: self._invoke())
+
+    def _rounded_points(self, x1: int, y1: int, x2: int, y2: int, radius: int) -> list[int]:
+        return [
+            x1 + radius, y1,
+            x1 + radius, y1,
+            x2 - radius, y1,
+            x2 - radius, y1,
+            x2, y1,
+            x2, y1 + radius,
+            x2, y1 + radius,
+            x2, y2 - radius,
+            x2, y2 - radius,
+            x2, y2,
+            x2 - radius, y2,
+            x2 - radius, y2,
+            x1 + radius, y2,
+            x1 + radius, y2,
+            x1, y2,
+            x1, y2 - radius,
+            x1, y2 - radius,
+            x1, y1 + radius,
+            x1, y1 + radius,
+            x1, y1,
+        ]
+
+    def _draw(self, fill: str) -> None:
+        self.delete("all")
+        points = self._rounded_points(2, 2, self.width - 2, self.height - 2, self.radius)
+        outline = self.border_fill if self.border_fill else fill
+        self.create_polygon(points, smooth=True, splinesteps=24, fill=fill, outline=outline, width=1)
+        self.create_text(
+            self.width // 2,
+            self.height // 2,
+            text=self.text,
+            fill=self.text_fill,
+            font=self.font,
+        )
+
+    def _on_enter(self, _event: tk.Event) -> None:
+        if not self._pressed:
+            self._draw(self.hover_fill)
+
+    def _on_leave(self, _event: tk.Event) -> None:
+        self._pressed = False
+        self._draw(self.fill)
+
+    def _on_press(self, _event: tk.Event) -> None:
+        self._pressed = True
+        self._draw(self.active_fill)
+
+    def _on_release(self, event: tk.Event) -> None:
+        inside = 0 <= event.x <= self.width and 0 <= event.y <= self.height
+        self._pressed = False
+        self._draw(self.hover_fill if inside else self.fill)
+        if inside:
+            self._invoke()
+
+    def _invoke(self) -> None:
+        if callable(self.command):
+            self.command()
+
+
 class SuperFlowApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -160,6 +273,7 @@ class SuperFlowApp:
         self.wave_rects: list[int] = []
         self.wave_timer: str | None = None
         self.audio_level = 0.0
+        self.wave_midline = 54.0
         self._entry_count: int = 0
 
         self._build_ui()
@@ -175,7 +289,6 @@ class SuperFlowApp:
         style.configure("TLabel", background="#f5ede3", foreground="#132640", font=("Segoe UI", 10))
         style.configure("Title.TLabel", font=("Segoe UI Semibold", 28), foreground="#132640")
         style.configure("Subtitle.TLabel", font=("Segoe UI", 11), foreground="#375273")
-        style.configure("TButton", padding=9, font=("Segoe UI Semibold", 10))
 
         outer = ttk.Frame(self.root, padding=20)
         outer.pack(fill="both", expand=True)
@@ -205,11 +318,18 @@ class SuperFlowApp:
         tk.Label(mic_row, text="Microphone", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
         self.mic_combo = ttk.Combobox(mic_row, textvariable=self.mic_var, state="readonly", width=52)
         self.mic_combo.pack(side="left", padx=8, fill="x", expand=True)
-        tk.Button(
-            mic_row, text="Refresh", command=self._refresh_microphones,
-            bg="#f5ede3", fg="#132640", activebackground="#e8ddd0", activeforeground="#132640",
-            relief="flat", highlightthickness=1, highlightbackground="#c8bfb5",
-            font=("Segoe UI Semibold", 10), padx=10, pady=5, cursor="hand2",
+        ModernButton(
+            mic_row,
+            text="Refresh",
+            command=self._refresh_microphones,
+            width=108,
+            height=42,
+            radius=14,
+            fill="#efe5da",
+            hover_fill="#e5d7c8",
+            active_fill="#dbcbb9",
+            text_fill="#132640",
+            border_fill="#dbcfc1",
         ).pack(side="left")
 
         mode_row = tk.Frame(control_card, bg="#ffffff")
@@ -243,6 +363,13 @@ class SuperFlowApp:
             variable=self.recorder_view_var,
             command=self._on_view_changed,
         ).pack(side="left", padx=10)
+        ttk.Radiobutton(
+            view_row,
+            text="Minimized recorder",
+            value="mini",
+            variable=self.recorder_view_var,
+            command=self._on_view_changed,
+        ).pack(side="left", padx=10)
 
         ttk.Label(
             control_card,
@@ -253,22 +380,41 @@ class SuperFlowApp:
 
         action_row = tk.Frame(control_card, bg="#ffffff")
         action_row.pack(fill="x")
-        tk.Button(
-            action_row, text="Export Session PDF", command=self._export_session_pdf,
-            bg="#ff6d37", fg="#ffffff", activebackground="#e85d28", activeforeground="#ffffff",
-            relief="flat", borderwidth=0, font=("Segoe UI Semibold", 10), padx=14, pady=7, cursor="hand2",
+        ModernButton(
+            action_row,
+            text="Export Session PDF",
+            command=self._export_session_pdf,
+            width=188,
+            height=48,
+            fill="#ff6d37",
+            hover_fill="#f46531",
+            active_fill="#e85d28",
+            text_fill="#ffffff",
+            border_fill="#ff6d37",
         ).pack(side="left")
-        tk.Button(
-            action_row, text="Copy Last Transcript", command=self._copy_last_transcript,
-            bg="#ffffff", fg="#132640", activebackground="#f5ede3", activeforeground="#132640",
-            relief="flat", highlightthickness=1, highlightbackground="#c8bfb5",
-            font=("Segoe UI Semibold", 10), padx=14, pady=7, cursor="hand2",
-        ).pack(side="left", padx=8)
-        tk.Button(
-            action_row, text="Clear Session", command=self._clear_session,
-            bg="#ffffff", fg="#c0392b", activebackground="#fef2f2", activeforeground="#c0392b",
-            relief="flat", highlightthickness=1, highlightbackground="#c8bfb5",
-            font=("Segoe UI Semibold", 10), padx=14, pady=7, cursor="hand2",
+        ModernButton(
+            action_row,
+            text="Copy Last Transcript",
+            command=self._copy_last_transcript,
+            width=186,
+            height=48,
+            fill="#f4ece2",
+            hover_fill="#eadfce",
+            active_fill="#dfd0bc",
+            text_fill="#132640",
+            border_fill="#deceb9",
+        ).pack(side="left", padx=10)
+        ModernButton(
+            action_row,
+            text="Clear Session",
+            command=self._clear_session,
+            width=150,
+            height=48,
+            fill="#fff3ee",
+            hover_fill="#fde6dc",
+            active_fill="#f8d7cc",
+            text_fill="#c0392b",
+            border_fill="#f1c5b8",
         ).pack(side="left")
 
         status_card = tk.Frame(
@@ -424,14 +570,20 @@ class SuperFlowApp:
             self._set_status("Control mode active. Hold Ctrl+Space, release to transcribe and paste.")
 
     def _on_view_changed(self) -> None:
-        if self.recorder_view_var.get() == "show":
+        view = self.recorder_view_var.get()
+        if view == "show":
             self._set_status("Recorder popup enabled.")
-            if self.is_recording and (self.recording_popup is None or not self.recording_popup.winfo_exists()):
-                self._show_recording_popup()
+        elif view == "mini":
+            self._set_status("Minimized recorder enabled.")
         else:
             self._set_status("Background-only mode enabled. No popup while recording.")
-            if self.recording_popup is not None and self.recording_popup.winfo_exists():
-                self._hide_recording_popup()
+
+        if not self.is_recording:
+            return
+
+        self._hide_recording_popup()
+        if view in {"show", "mini"}:
+            self._show_recording_popup()
 
     def _on_space_hotkey(self) -> None:
         # Control mode is handled by key-down/key-up events so release reliably stops.
@@ -491,7 +643,7 @@ class SuperFlowApp:
                 return
             self.is_recording = True
 
-        if self.recorder_view_var.get() == "show":
+        if self.recorder_view_var.get() in {"show", "mini"}:
             self._show_recording_popup()
 
         if self.mode_var.get() == "toggle":
@@ -653,20 +805,19 @@ class SuperFlowApp:
         self.transcript_box.tag_bind(entry_tag, "<Button-1>", lambda _e, t=text: self._copy_entry_text(t))
         self.transcript_box.tag_bind(entry_tag, "<Enter>", lambda _e: self.transcript_box.configure(cursor="hand2"))
         self.transcript_box.tag_bind(entry_tag, "<Leave>", lambda _e: self.transcript_box.configure(cursor=""))
-        copy_btn = tk.Button(
+        copy_btn = ModernButton(
             self.transcript_box,
-            text="⧉",
-            fg="#c8a878",
-            bg="#fdf8f4",
-            activeforeground="#ff6d37",
-            activebackground="#fdf8f4",
-            relief="flat",
-            borderwidth=0,
-            padx=3,
-            pady=0,
-            font=("Segoe UI", 10),
-            cursor="hand2",
+            text="Copy",
             command=lambda t=text: self._copy_entry_text(t),
+            width=56,
+            height=24,
+            radius=10,
+            fill="#f1e4d2",
+            hover_fill="#ead8c0",
+            active_fill="#deccb3",
+            text_fill="#8b6339",
+            border_fill="#e2d0b9",
+            font=("Segoe UI", 8),
         )
         self.transcript_box.window_create("end", window=copy_btn)
         self.transcript_box.insert("end", "\n\n", "msg")
@@ -745,6 +896,15 @@ class SuperFlowApp:
         if self.recording_popup is not None and self.recording_popup.winfo_exists():
             return
 
+        if self.recorder_view_var.get() == "mini":
+            self._show_mini_recording_popup()
+            return
+
+        self._show_large_recording_popup()
+
+    def _show_large_recording_popup(self) -> None:
+        self.wave_midline = 54.0
+
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
         popup.geometry("980x244")
@@ -815,19 +975,19 @@ class SuperFlowApp:
             bg="#f5ede3",
             font=("Segoe UI", 16),
         ).pack(side="left", padx=(0, 10))
-        tk.Button(
+        ModernButton(
             right,
             text=stop_hint,
             command=self._stop_recording_and_transcribe,
-            fg="#ffffff",
-            bg="#ff6d37",
-            activebackground="#e85d28",
-            activeforeground="#ffffff",
-            relief="flat",
-            borderwidth=0,
-            font=("Segoe UI Semibold", 18),
-            padx=14,
-            pady=4,
+            width=140 if self.mode_var.get() == "toggle" else 128,
+            height=42,
+            radius=14,
+            fill="#ff6d37",
+            hover_fill="#f46531",
+            active_fill="#e85d28",
+            text_fill="#ffffff",
+            border_fill="#ff6d37",
+            font=("Segoe UI Semibold", 12),
         ).pack(side="left")
         tk.Label(right, text="|", fg="#c8bfb5", bg="#f5ede3", font=("Segoe UI", 18)).pack(side="left", padx=18)
         tk.Label(
@@ -837,20 +997,92 @@ class SuperFlowApp:
             bg="#f5ede3",
             font=("Segoe UI", 16),
         ).pack(side="left", padx=(0, 10))
-        tk.Button(
+        ModernButton(
             right,
             text="Esc",
             command=self._stop_recording_and_transcribe,
-            fg="#132640",
-            bg="#e0d5c8",
-            activebackground="#c8bfb5",
-            activeforeground="#132640",
-            relief="flat",
-            borderwidth=0,
-            font=("Segoe UI Semibold", 18),
-            padx=14,
-            pady=4,
+            width=86,
+            height=42,
+            radius=14,
+            fill="#e7dbcf",
+            hover_fill="#dccdbd",
+            active_fill="#cfbea9",
+            text_fill="#132640",
+            border_fill="#d8c8b4",
+            font=("Segoe UI Semibold", 12),
         ).pack(side="left")
+
+        popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
+        popup.bind("<Escape>", lambda _e: self._stop_recording_and_transcribe())
+        self.wave_canvas.bind("<Button-1>", lambda _e: self._stop_recording_and_transcribe())
+
+        self.recording_popup = popup
+        self._tick_waveform()
+
+    def _show_mini_recording_popup(self) -> None:
+        self.wave_midline = 24.0
+
+        popup = tk.Toplevel(self.root)
+        popup.title("Super Flow Recorder")
+        popup.configure(bg="#f5ede3")
+        popup.overrideredirect(True)
+        popup.attributes("-topmost", True)
+        popup.resizable(False, False)
+        popup.protocol("WM_DELETE_WINDOW", self._cancel_recording)
+
+        width = 430
+        height = 82
+        x = max(12, (popup.winfo_screenwidth() - width) // 2)
+        y = max(12, popup.winfo_screenheight() - height - 96)
+        popup.geometry(f"{width}x{height}+{x}+{y}")
+
+        box = tk.Frame(
+            popup,
+            bg="#fcf7f1",
+            highlightthickness=1,
+            highlightbackground="#d9cab7",
+            padx=14,
+            pady=10,
+        )
+        box.pack(fill="both", expand=True)
+
+        top_row = tk.Frame(box, bg="#fcf7f1")
+        top_row.pack(fill="x")
+
+        dot = tk.Canvas(top_row, width=12, height=12, bg="#fcf7f1", highlightthickness=0)
+        dot.pack(side="left", padx=(0, 8))
+        dot.create_oval(2, 2, 10, 10, fill="#ff4b43", outline="")
+
+        tk.Label(
+            top_row,
+            text="Recording",
+            fg="#132640",
+            bg="#fcf7f1",
+            font=("Segoe UI Semibold", 10),
+        ).pack(side="left")
+
+        tk.Label(
+            top_row,
+            text="Esc to stop",
+            fg="#6a7f9b",
+            bg="#fcf7f1",
+            font=("Segoe UI", 9),
+        ).pack(side="right")
+
+        self.wave_canvas = tk.Canvas(box, height=48, bg="#fcf7f1", highlightthickness=0)
+        self.wave_canvas.pack(fill="x", pady=(8, 0))
+
+        self.wave_rects.clear()
+        bar_count = 34
+        bar_w = 6
+        gap = 5
+        total = (bar_count * bar_w) + ((bar_count - 1) * gap)
+        start_x = max(6, int((width - 30 - total) / 2))
+        for i in range(bar_count):
+            x1 = start_x + (i * (bar_w + gap))
+            x2 = x1 + bar_w
+            rect = self.wave_canvas.create_rectangle(x1, self.wave_midline, x2, self.wave_midline, fill="#132640", width=0)
+            self.wave_rects.append(rect)
 
         popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
         popup.bind("<Escape>", lambda _e: self._stop_recording_and_transcribe())
@@ -872,8 +1104,11 @@ class SuperFlowApp:
     def _tick_waveform(self) -> None:
         if self.recording_popup is None or not self.recording_popup.winfo_exists() or self.wave_canvas is None:
             return
-        base = 7
-        amp = max(5.0, min(44.0, self.audio_level * 54.0))
+        canvas_h = int(float(self.wave_canvas.cget("height")))
+        mid = self.wave_midline
+        base = max(4.0, canvas_h * 0.12)
+        max_amp = max(10.0, (canvas_h / 2) - 6.0)
+        amp = max(base, min(max_amp, self.audio_level * (max_amp * 1.45)))
         count = len(self.wave_rects)
         for i, rect in enumerate(self.wave_rects):
             center_falloff = 1.0 - (abs((count / 2) - i) / (count / 2))
@@ -881,7 +1116,6 @@ class SuperFlowApp:
             jitter = random.uniform(-1.4, 1.4)
             h = base + (amp * center_falloff * wobble) + jitter
             x1, _y1, x2, _y2 = self.wave_canvas.coords(rect)
-            mid = 54
             top = mid - h
             bot = mid + h
             self.wave_canvas.coords(rect, x1, top, x2, bot)
