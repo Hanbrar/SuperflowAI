@@ -145,6 +145,7 @@ class SuperFlowApp:
         self.audio_frames: list[np.ndarray[Any, Any]] = []
         self.current_sample_rate = SAMPLE_RATE
         self.stream: sd.InputStream | None = None
+        self.recording_source = ""
         self.hotkey_handles: list[int] = []
         self.hook_handle: Any = None
 
@@ -318,15 +319,15 @@ class SuperFlowApp:
             self._set_status("Hotkey registration failed. Try running the app as Administrator.")
 
     def _on_mode_changed(self) -> None:
+        self.combo_is_pressed = False
         if self.mode_var.get() == "toggle":
             self._set_status("Toggle mode active. Press Ctrl+Space or Ctrl+H to start and stop.")
         else:
             self._set_status("Control mode active. Hold Ctrl+Space, release to transcribe and paste.")
 
     def _on_space_hotkey(self) -> None:
-        if self.mode_var.get() == "control":
-            if not self.is_recording:
-                self._start_recording("space")
+        # Control mode is handled by key-down/key-up events so release reliably stops.
+        if self.mode_var.get() != "toggle":
             return
         if self.is_recording:
             self._stop_recording_and_transcribe()
@@ -387,8 +388,9 @@ class SuperFlowApp:
                 self._set_status(f"Failed to start recording: {exc}")
                 return
             self.is_recording = True
+            self.recording_source = source
 
-        self._show_recording_popup()
+        self._show_recording_popup(source)
         if source == "h":
             self._set_status("Recording from Ctrl+H popup. Press Space, Esc, or Exit to transcribe.")
         elif self.mode_var.get() == "toggle":
@@ -454,6 +456,7 @@ class SuperFlowApp:
             except Exception:
                 pass
         self.audio_frames = []
+        self.recording_source = ""
         self._set_status("Recording canceled.")
 
     def _transcribe_worker(self, audio: np.ndarray[Any, Any]) -> None:
@@ -589,7 +592,7 @@ class SuperFlowApp:
         self._set_status(f"Session PDF exported: {target}")
         return True
 
-    def _show_recording_popup(self) -> None:
+    def _show_recording_popup(self, source: str) -> None:
         if self.recording_popup is not None and self.recording_popup.winfo_exists():
             return
 
@@ -644,9 +647,15 @@ class SuperFlowApp:
 
         right = tk.Frame(footer, bg="#efefef")
         right.pack(side="right")
+        if source == "h":
+            stop_hint = "Space"
+        elif self.mode_var.get() == "control":
+            stop_hint = "Release"
+        else:
+            stop_hint = "Ctrl+Space"
         tk.Button(
             right,
-            text="Exit",
+            text="Stop",
             command=self._stop_recording_and_transcribe,
             fg="#666666",
             bg="#efefef",
@@ -660,7 +669,7 @@ class SuperFlowApp:
         ).pack(side="left", padx=(0, 10))
         tk.Button(
             right,
-            text="Space",
+            text=stop_hint,
             command=self._stop_recording_and_transcribe,
             fg="#4f4f4f",
             bg="#d9d9d9",
@@ -702,7 +711,8 @@ class SuperFlowApp:
             pady=2,
         ).pack(side="left")
 
-        popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
+        if source == "h":
+            popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
         popup.bind("<Escape>", lambda _e: self._stop_recording_and_transcribe())
         self.wave_canvas.bind("<Button-1>", lambda _e: self._stop_recording_and_transcribe())
 
@@ -718,6 +728,7 @@ class SuperFlowApp:
         self.recording_popup = None
         self.wave_canvas = None
         self.wave_rects = []
+        self.recording_source = ""
 
     def _tick_waveform(self) -> None:
         if self.recording_popup is None or not self.recording_popup.winfo_exists() or self.wave_canvas is None:
