@@ -215,32 +215,40 @@ class SuperFlowApp:
         mode_row = tk.Frame(control_card, bg="#ffffff")
         mode_row.pack(fill="x", pady=(0, 6))
         tk.Label(mode_row, text="Activation mode", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
-        self._pill_toggle(
-            mode_row,
-            [("Toggle", "toggle"), ("Hold Ctrl+Space", "control")],
-            self.mode_var,
-            self._on_mode_changed,
+        ttk.Radiobutton(mode_row, text="Toggle", value="toggle", variable=self.mode_var, command=self._on_mode_changed).pack(
+            side="left", padx=(12, 0)
         )
+        ttk.Radiobutton(
+            mode_row,
+            text="Control (hold Ctrl+Space)",
+            value="control",
+            variable=self.mode_var,
+            command=self._on_mode_changed,
+        ).pack(side="left", padx=10)
 
         view_row = tk.Frame(control_card, bg="#ffffff")
         view_row.pack(fill="x", pady=(0, 6))
         tk.Label(view_row, text="Recorder view", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
-        self._pill_toggle(
+        ttk.Radiobutton(
             view_row,
-            [("Show Recorder", "show"), ("Background only", "hidden")],
-            self.recorder_view_var,
-            self._on_view_changed,
-        )
+            text="Show SuperFlow Recorder",
+            value="show",
+            variable=self.recorder_view_var,
+            command=self._on_view_changed,
+        ).pack(side="left", padx=(12, 0))
+        ttk.Radiobutton(
+            view_row,
+            text="Background only",
+            value="hidden",
+            variable=self.recorder_view_var,
+            command=self._on_view_changed,
+        ).pack(side="left", padx=10)
 
-        tk.Label(
+        ttk.Label(
             control_card,
             text="Hold Ctrl+Space and talk. Release to paste where your cursor is.",
             wraplength=580,
-            bg="#ffffff",
-            fg="#375273",
-            font=("Segoe UI", 11),
-            anchor="w",
-            justify="left",
+            style="Subtitle.TLabel",
         ).pack(fill="x", pady=(2, 10))
 
         action_row = tk.Frame(control_card, bg="#ffffff")
@@ -332,63 +340,18 @@ class SuperFlowApp:
         twitter_link.pack(side="left")
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
-    def _pill_toggle(
-        self,
-        parent: tk.Widget,
-        options: list[tuple[str, str]],
-        var: tk.StringVar,
-        command=None,
-    ) -> tk.Frame:
-        """Modern pill-style toggle group. Selected pill: orange. Unselected: cream."""
-        container = tk.Frame(parent, bg="#e0d5c8", padx=2, pady=2)
-        container.pack(side="left", padx=(12, 0))
-        btns: list[tuple[tk.Button, str]] = []
-
-        def refresh(*_: object) -> None:
-            val = var.get()
-            for btn, bval in btns:
-                if bval == val:
-                    btn.configure(bg="#ff6d37", fg="#ffffff", activebackground="#e85d28", activeforeground="#ffffff")
-                else:
-                    btn.configure(bg="#f5ede3", fg="#6a7f9b", activebackground="#ecddd0", activeforeground="#132640")
-
-        def make_click(v: str):
-            def click() -> None:
-                var.set(v)
-                refresh()
-                if command:
-                    command()
-            return click
-
-        for text, value in options:
-            btn = tk.Button(
-                container,
-                text=text,
-                relief="flat",
-                borderwidth=0,
-                font=("Segoe UI Semibold", 9),
-                padx=12,
-                pady=5,
-                cursor="hand2",
-                command=make_click(value),
-            )
-            btn.pack(side="left", padx=1)
-            btns.append((btn, value))
-
-        refresh()
-        return container
-
     def _build_header(self, parent: ttk.Frame) -> None:
         canvas_h = 180
         header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0)
         header.pack(fill="x")
 
-        # Warm gradient: orange glow at top fading to exactly #f5ede3 at bottom
+        # Warm gradient: orange glow at top fading to cream
         for y in range(canvas_h):
-            t = (y / (canvas_h - 1)) ** 0.55 if canvas_h > 1 else 1.0
-            r_v = int(round(255 + (245 - 255) * t))
-            g_v = int(round(218 + (237 - 218) * t))
-            b_v = int(round(188 + (227 - 188) * t))
+            t = y / canvas_h
+            glow = max(0.0, 0.30 * (1.0 - t * 1.7))
+            r_v = min(255, int(247 + (255 - 247) * glow + (245 - 247) * t * 0.4))
+            g_v = min(255, int(239 - int(39 * glow * 0.4) + (237 - 239) * t * 0.4))
+            b_v = min(255, int(228 - int(228 * glow * 0.38) + (227 - 228) * t * 0.4))
             header.create_line(0, y, 4000, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}")
 
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
