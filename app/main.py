@@ -231,6 +231,60 @@ class ModernButton(tk.Canvas):
             self.command()
 
 
+class ChoiceChip(ModernButton):
+    def __init__(
+        self,
+        parent: tk.Misc,
+        text: str,
+        variable: tk.StringVar,
+        value: str,
+        command: Any,
+        *,
+        width: int,
+    ) -> None:
+        self.variable = variable
+        self.value = value
+        self.change_command = command
+        super().__init__(
+            parent,
+            text=text,
+            command=self._choose,
+            width=width,
+            height=38,
+            radius=14,
+            fill="#f3ebe1",
+            hover_fill="#ece1d4",
+            active_fill="#e2d2c0",
+            text_fill="#132640",
+            border_fill="#dccfbe",
+            font=("Segoe UI", 9),
+        )
+        self.variable.trace_add("write", self._sync_from_state)
+        self._sync_from_state()
+
+    def _choose(self) -> None:
+        if self.variable.get() != self.value:
+            self.variable.set(self.value)
+        if callable(self.change_command):
+            self.change_command()
+
+    def _sync_from_state(self, *_args: Any) -> None:
+        selected = self.variable.get() == self.value
+        if selected:
+            self.fill = "#132640"
+            self.hover_fill = "#1d3553"
+            self.active_fill = "#0d1f35"
+            self.text_fill = "#ffffff"
+            self.border_fill = "#132640"
+        else:
+            self.fill = "#f3ebe1"
+            self.hover_fill = "#ece1d4"
+            self.active_fill = "#e2d2c0"
+            self.text_fill = "#132640"
+            self.border_fill = "#dccfbe"
+        self._draw(self.fill)
+
+
 class SuperFlowApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -289,19 +343,30 @@ class SuperFlowApp:
         style.configure("TLabel", background="#f5ede3", foreground="#132640", font=("Segoe UI", 10))
         style.configure("Title.TLabel", font=("Segoe UI Semibold", 28), foreground="#132640")
         style.configure("Subtitle.TLabel", font=("Segoe UI", 11), foreground="#375273")
+        style.configure(
+            "SuperFlow.TCombobox",
+            fieldbackground="#f7f0e7",
+            background="#efe5da",
+            foreground="#132640",
+            bordercolor="#d7cbbd",
+            arrowcolor="#132640",
+            lightcolor="#d7cbbd",
+            darkcolor="#d7cbbd",
+            padding=6,
+        )
+        style.map(
+            "SuperFlow.TCombobox",
+            fieldbackground=[("readonly", "#f7f0e7"), ("focus", "#fff7ef")],
+            background=[("readonly", "#efe5da")],
+            foreground=[("readonly", "#132640")],
+            bordercolor=[("focus", "#ffb08e"), ("readonly", "#d7cbbd")],
+            arrowcolor=[("readonly", "#132640"), ("active", "#132640")],
+        )
 
         outer = ttk.Frame(self.root, padding=20)
         outer.pack(fill="both", expand=True)
 
         self._build_header(outer)
-
-        ttk.Label(outer, text="Super Flow", style="Title.TLabel", anchor="center").pack(pady=(10, 2))
-        ttk.Label(
-            outer,
-            text="Simple voice dictation for free.",
-            style="Subtitle.TLabel",
-            anchor="center",
-        ).pack(pady=(0, 10))
 
         control_card = tk.Frame(
             outer,
@@ -316,7 +381,13 @@ class SuperFlowApp:
         mic_row = tk.Frame(control_card, bg="#ffffff")
         mic_row.pack(fill="x", pady=(0, 10))
         tk.Label(mic_row, text="Microphone", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
-        self.mic_combo = ttk.Combobox(mic_row, textvariable=self.mic_var, state="readonly", width=52)
+        self.mic_combo = ttk.Combobox(
+            mic_row,
+            textvariable=self.mic_var,
+            state="readonly",
+            width=52,
+            style="SuperFlow.TCombobox",
+        )
         self.mic_combo.pack(side="left", padx=8, fill="x", expand=True)
         ModernButton(
             mic_row,
@@ -335,41 +406,50 @@ class SuperFlowApp:
         mode_row = tk.Frame(control_card, bg="#ffffff")
         mode_row.pack(fill="x", pady=(0, 6))
         tk.Label(mode_row, text="Activation mode", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
-        ttk.Radiobutton(mode_row, text="Toggle", value="toggle", variable=self.mode_var, command=self._on_mode_changed).pack(
-            side="left", padx=(12, 0)
-        )
-        ttk.Radiobutton(
+        ChoiceChip(
+            mode_row,
+            text="Toggle",
+            variable=self.mode_var,
+            value="toggle",
+            command=self._on_mode_changed,
+            width=92,
+        ).pack(side="left", padx=(12, 0))
+        ChoiceChip(
             mode_row,
             text="Control (hold Ctrl+Space)",
-            value="control",
             variable=self.mode_var,
+            value="control",
             command=self._on_mode_changed,
-        ).pack(side="left", padx=10)
+            width=222,
+        ).pack(side="left", padx=8)
 
         view_row = tk.Frame(control_card, bg="#ffffff")
         view_row.pack(fill="x", pady=(0, 6))
         tk.Label(view_row, text="Recorder view", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
-        ttk.Radiobutton(
+        ChoiceChip(
             view_row,
             text="Show SuperFlow Recorder",
-            value="show",
             variable=self.recorder_view_var,
+            value="show",
             command=self._on_view_changed,
+            width=194,
         ).pack(side="left", padx=(12, 0))
-        ttk.Radiobutton(
+        ChoiceChip(
             view_row,
             text="Background only",
-            value="hidden",
             variable=self.recorder_view_var,
+            value="hidden",
             command=self._on_view_changed,
-        ).pack(side="left", padx=10)
-        ttk.Radiobutton(
+            width=148,
+        ).pack(side="left", padx=8)
+        ChoiceChip(
             view_row,
             text="Minimized recorder",
-            value="mini",
             variable=self.recorder_view_var,
+            value="mini",
             command=self._on_view_changed,
-        ).pack(side="left", padx=10)
+            width=174,
+        ).pack(side="left", padx=8)
 
         ttk.Label(
             control_card,
@@ -396,7 +476,7 @@ class SuperFlowApp:
             action_row,
             text="Copy Last Transcript",
             command=self._copy_last_transcript,
-            width=186,
+            width=202,
             height=48,
             fill="#f4ece2",
             hover_fill="#eadfce",
@@ -487,21 +567,47 @@ class SuperFlowApp:
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
     def _build_header(self, parent: ttk.Frame) -> None:
-        canvas_h = 180
-        header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0)
+        canvas_h = 290
+        header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0, bg="#f5ede3")
         header.pack(fill="x")
 
-        # Warm gradient: orange glow at top fading to cream
+        # Draw one continuous warm hero surface so the background fades out cleanly.
         for y in range(canvas_h):
             t = y / canvas_h
-            glow = max(0.0, 0.30 * (1.0 - t * 1.7))
-            r_v = min(255, int(247 + (255 - 247) * glow + (245 - 247) * t * 0.4))
-            g_v = min(255, int(239 - int(39 * glow * 0.4) + (237 - 239) * t * 0.4))
-            b_v = min(255, int(228 - int(228 * glow * 0.38) + (227 - 228) * t * 0.4))
+            top_warmth = max(0.0, 0.28 * (1.0 - t * 1.45))
+            r_v = min(255, int(245 + (255 - 245) * top_warmth + 2 * (1.0 - t)))
+            g_v = min(255, int(237 - int(32 * top_warmth * 0.42) + 1 * (1.0 - t)))
+            b_v = min(255, int(227 - int(26 * top_warmth * 0.45)))
             header.create_line(0, y, 4000, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}")
+
+        title_id = header.create_text(
+            0,
+            210,
+            text="Super Flow",
+            fill="#132640",
+            font=("Segoe UI Semibold", 34),
+            anchor="n",
+        )
+        subtitle_id = header.create_text(
+            0,
+            258,
+            text="Simple voice dictation for free.",
+            fill="#375273",
+            font=("Segoe UI", 17),
+            anchor="n",
+        )
 
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
         if not logo_path.exists():
+            header.coords(title_id, 400, 210)
+            header.coords(subtitle_id, 400, 258)
+            header.bind(
+                "<Configure>",
+                lambda e, tid=title_id, sid=subtitle_id: (
+                    header.coords(tid, e.width // 2, 210),
+                    header.coords(sid, e.width // 2, 258),
+                ),
+            )
             return
         try:
             image = Image.open(logo_path).convert("RGBA")
@@ -513,12 +619,16 @@ class SuperFlowApp:
             bbox = image.getchannel("A").getbbox()
             if bbox:
                 image = image.crop(bbox)
-            image.thumbnail((340, 160), Image.Resampling.LANCZOS)
+            image.thumbnail((320, 140), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            logo_id = header.create_image(400, canvas_h // 2, image=self.logo_photo, anchor="center")
+            logo_id = header.create_image(400, 92, image=self.logo_photo, anchor="center")
             header.bind(
                 "<Configure>",
-                lambda e, lid=logo_id, ch=canvas_h: header.coords(lid, e.width // 2, ch // 2),
+                lambda e, lid=logo_id, tid=title_id, sid=subtitle_id: (
+                    header.coords(lid, e.width // 2, 92),
+                    header.coords(tid, e.width // 2, 210),
+                    header.coords(sid, e.width // 2, 258),
+                ),
             )
         except Exception:
             pass
