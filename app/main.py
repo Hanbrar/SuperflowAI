@@ -571,51 +571,36 @@ class SuperFlowApp:
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
     def _build_header(self, parent: ttk.Frame) -> None:
-        canvas_h = 252
+        canvas_h = 190
         header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0, bg="#f5ede3")
         header.pack(fill="x")
 
-        # Draw one continuous warm hero surface so the background fades out cleanly.
+        # Warm gradient: orange glow at top fading to exactly #f5ede3 at bottom
         for y in range(canvas_h):
-            t = y / canvas_h
-            top_warmth = max(0.0, 0.28 * (1.0 - t * 1.45))
-            r_v = min(255, int(245 + (255 - 245) * top_warmth + 2 * (1.0 - t)))
-            g_v = min(255, int(237 - int(32 * top_warmth * 0.42) + 1 * (1.0 - t)))
-            b_v = min(255, int(227 - int(26 * top_warmth * 0.45)))
+            t = (y / (canvas_h - 1)) ** 0.55 if canvas_h > 1 else 1.0
+            r_v = int(round(255 + (245 - 255) * t))
+            g_v = int(round(218 + (237 - 218) * t))
+            b_v = int(round(188 + (227 - 188) * t))
             header.create_line(0, y, 4000, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}")
 
-        title_id = header.create_text(
-            0,
-            150,
-            text="Super Flow",
-            fill="#132640",
-            font=("Segoe UI Semibold", 34),
-            anchor="n",
-        )
         subtitle_id = header.create_text(
-            0,
-            202,
+            0, 152,
             text="Simple voice dictation for free.",
             fill="#375273",
-            font=("Segoe UI", 16),
+            font=("Segoe UI", 13),
             anchor="n",
         )
 
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
         if not logo_path.exists():
-            header.coords(title_id, 400, 150)
-            header.coords(subtitle_id, 400, 202)
+            header.coords(subtitle_id, 400, 152)
             header.bind(
                 "<Configure>",
-                lambda e, tid=title_id, sid=subtitle_id: (
-                    header.coords(tid, e.width // 2, 150),
-                    header.coords(sid, e.width // 2, 202),
-                ),
+                lambda e, sid=subtitle_id: header.coords(sid, e.width // 2, 152),
             )
             return
         try:
             image = Image.open(logo_path).convert("RGBA")
-            # Strip white/near-white background
             data = np.array(image, dtype=np.uint8)
             white = (data[:, :, 0] > 238) & (data[:, :, 1] > 238) & (data[:, :, 2] > 238) & (data[:, :, 3] > 10)
             data[white, 3] = 0
@@ -623,15 +608,14 @@ class SuperFlowApp:
             bbox = image.getchannel("A").getbbox()
             if bbox:
                 image = image.crop(bbox)
-            image.thumbnail((300, 128), Image.Resampling.LANCZOS)
+            image.thumbnail((300, 110), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            logo_id = header.create_image(400, 70, image=self.logo_photo, anchor="center")
+            logo_id = header.create_image(400, 62, image=self.logo_photo, anchor="center")
             header.bind(
                 "<Configure>",
-                lambda e, lid=logo_id, tid=title_id, sid=subtitle_id: (
-                    header.coords(lid, e.width // 2, 70),
-                    header.coords(tid, e.width // 2, 150),
-                    header.coords(sid, e.width // 2, 202),
+                lambda e, lid=logo_id, sid=subtitle_id: (
+                    header.coords(lid, e.width // 2, 62),
+                    header.coords(sid, e.width // 2, 152),
                 ),
             )
         except Exception:
