@@ -627,47 +627,40 @@ class SuperFlowApp:
             pass
 
     def _get_cursor_monitor(self) -> dict:
-        """Return the work-area rect of whichever monitor the cursor is currently on."""
+        """Return the rect of whichever monitor the cursor is currently on."""
         try:
-            import struct as _struct
+            cx = self.root.winfo_pointerx()
+            cy = self.root.winfo_pointery()
 
-            class POINT(ctypes.Structure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
             class RECT(ctypes.Structure):
                 _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
                              ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
-            class MONITORINFO(ctypes.Structure):
-                _fields_ = [("cbSize", ctypes.c_uint), ("rcMonitor", RECT),
-                             ("rcWork", RECT), ("dwFlags", ctypes.c_uint)]
 
-            user32 = ctypes.windll.user32
-            pt = POINT()
-            user32.GetCursorPos(ctypes.byref(pt))
+            monitors: list[dict] = []
 
-            # ctypes cannot reliably pass structs by value, so pack POINT into a
-            # 64-bit integer (x in low 32 bits, y in high 32 bits) and declare
-            # argtypes accordingly — this matches the x64 calling convention.
-            user32.MonitorFromPoint.restype = ctypes.c_void_p
-            user32.MonitorFromPoint.argtypes = [ctypes.c_int64, ctypes.c_uint32]
-            packed = _struct.unpack("<q", _struct.pack("<ii", pt.x, pt.y))[0]
-            hmon = user32.MonitorFromPoint(packed, 2)  # MONITOR_DEFAULTTONEAREST
-            if not hmon:
-                raise RuntimeError("MonitorFromPoint returned NULL")
+            MonitorEnumProc = ctypes.WINFUNCTYPE(
+                ctypes.c_bool, ctypes.c_ulong, ctypes.c_ulong,
+                ctypes.POINTER(RECT), ctypes.c_long,
+            )
 
-            mi = MONITORINFO()
-            mi.cbSize = ctypes.sizeof(MONITORINFO)
-            if not user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
-                raise RuntimeError("GetMonitorInfoW failed")
+            def _cb(hmon: int, hdc: int, lprect: ctypes.POINTER, lparam: int) -> bool:
+                r = lprect.contents
+                monitors.append({"left": r.left, "top": r.top,
+                                  "right": r.right, "bottom": r.bottom})
+                return True
 
-            r = mi.rcWork
-            if r.right <= r.left or r.bottom <= r.top:
-                raise ValueError("Invalid monitor rect")
+            ctypes.windll.user32.EnumDisplayMonitors(None, None, MonitorEnumProc(_cb), 0)
 
-            return {"left": r.left, "top": r.top, "right": r.right, "bottom": r.bottom}
+            for m in monitors:
+                if m["left"] <= cx < m["right"] and m["top"] <= cy < m["bottom"]:
+                    return m
+            if monitors:
+                return monitors[0]
         except Exception:
-            return {"left": 0, "top": 0,
-                    "right": self.root.winfo_screenwidth(),
-                    "bottom": self.root.winfo_screenheight()}
+            pass
+        return {"left": 0, "top": 0,
+                "right": self.root.winfo_screenwidth(),
+                "bottom": self.root.winfo_screenheight()}
 
     def _refresh_microphones(self) -> None:
         self.microphones.clear()
@@ -1178,7 +1171,7 @@ class SuperFlowApp:
         height = 88
         mon = self._get_cursor_monitor()
         x = mon["left"] + max(12, (mon["right"] - mon["left"] - width) // 2)
-        y = mon["bottom"] - height - 96
+        y = mon["bottom"] - height - 12
         popup.geometry(f"{width}x{height}+{x}+{y}")
 
         box = tk.Frame(
