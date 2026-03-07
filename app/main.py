@@ -758,7 +758,7 @@ class SuperFlowApp:
             self.is_recording = True
 
         if self.recorder_view_var.get() in {"show", "mini"}:
-            self._show_recording_popup()
+            self.root.after(0, self._show_recording_popup)
 
         if self.mode_var.get() == "toggle":
             self._set_status("Listening. Press Ctrl+Space again to stop.")
@@ -784,7 +784,7 @@ class SuperFlowApp:
             stream = self.stream
             self.stream = None
 
-        self._hide_recording_popup()
+        self.root.after(0, self._hide_recording_popup)
         if stream is not None:
             try:
                 stream.stop()
@@ -815,7 +815,7 @@ class SuperFlowApp:
             stream = self.stream
             self.stream = None
 
-        self._hide_recording_popup()
+        self.root.after(0, self._hide_recording_popup)
         if stream is not None:
             try:
                 stream.stop()
@@ -1035,14 +1035,6 @@ class SuperFlowApp:
         wave_wrap.pack(fill="x", padx=26, pady=(16, 8))
         self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#f7efe4", highlightthickness=0)
         self.wave_canvas.pack(fill="x")
-
-        # Very subtle warm-to-cream gradient — just enough depth, no visible split
-        for x in range(980):
-            t = x / 980
-            r_bg = min(255, int(247 + (244 - 247) * t))
-            g_bg = min(255, int(239 + (240 - 239) * t))
-            b_bg = min(255, int(228 + (234 - 228) * t))
-            self.wave_canvas.create_line(x, 0, x, 108, fill=f"#{r_bg:02x}{g_bg:02x}{b_bg:02x}")
 
         self.wave_rects.clear()
         bar_count = 86
