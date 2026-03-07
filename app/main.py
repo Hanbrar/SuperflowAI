@@ -297,7 +297,7 @@ class SuperFlowApp:
             value="Ready. Hold Ctrl+Space, speak, release, and paste instantly."
         )
         self.mode_var = tk.StringVar(value="control")
-        self.recorder_view_var = tk.StringVar(value="show")
+        self.recorder_view_var = tk.StringVar(value="mini")
         self.mic_var = tk.StringVar(value="")
 
         self.model: WhisperModel | None = None
@@ -571,7 +571,7 @@ class SuperFlowApp:
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
     def _build_header(self, parent: ttk.Frame) -> None:
-        canvas_h = 190
+        canvas_h = 220
         header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0, bg="#f5ede3")
         header.pack(fill="x")
 
@@ -584,19 +584,19 @@ class SuperFlowApp:
             header.create_line(0, y, 4000, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}")
 
         subtitle_id = header.create_text(
-            0, 152,
+            0, 178,
             text="Simple voice dictation for free.",
             fill="#375273",
-            font=("Segoe UI", 13),
+            font=("Segoe UI", 14),
             anchor="n",
         )
 
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
         if not logo_path.exists():
-            header.coords(subtitle_id, 400, 152)
+            header.coords(subtitle_id, 400, 178)
             header.bind(
                 "<Configure>",
-                lambda e, sid=subtitle_id: header.coords(sid, e.width // 2, 152),
+                lambda e, sid=subtitle_id: header.coords(sid, e.width // 2, 178),
             )
             return
         try:
@@ -608,14 +608,14 @@ class SuperFlowApp:
             bbox = image.getchannel("A").getbbox()
             if bbox:
                 image = image.crop(bbox)
-            image.thumbnail((300, 110), Image.Resampling.LANCZOS)
+            image.thumbnail((480, 150), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            logo_id = header.create_image(400, 62, image=self.logo_photo, anchor="center")
+            logo_id = header.create_image(400, 78, image=self.logo_photo, anchor="center")
             header.bind(
                 "<Configure>",
                 lambda e, lid=logo_id, sid=subtitle_id: (
-                    header.coords(lid, e.width // 2, 62),
-                    header.coords(sid, e.width // 2, 152),
+                    header.coords(lid, e.width // 2, 78),
+                    header.coords(sid, e.width // 2, 178),
                 ),
             )
         except Exception:
