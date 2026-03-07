@@ -451,11 +451,15 @@ class SuperFlowApp:
             width=118,
         ).pack(side="left", padx=8)
 
-        ttk.Label(
+        tk.Label(
             control_card,
             text="Hold Ctrl+Space and talk. Release to paste where your cursor is.",
             wraplength=580,
-            style="Subtitle.TLabel",
+            bg="#ffffff",
+            fg="#375273",
+            font=("Segoe UI", 11),
+            anchor="w",
+            justify="left",
         ).pack(fill="x", pady=(2, 10))
 
         action_row = tk.Frame(control_card, bg="#ffffff")
@@ -1214,7 +1218,10 @@ class SuperFlowApp:
     def _tick_waveform(self) -> None:
         if self.recording_popup is None or not self.recording_popup.winfo_exists() or self.wave_canvas is None:
             return
-        canvas_h = int(float(self.wave_canvas.cget("height")))
+        try:
+            canvas_h = int(float(self.wave_canvas.cget("height")))
+        except Exception:
+            return
         mid = self.wave_midline
         is_mini = mid <= 26.0
         base = max(3.0 if is_mini else 4.0, canvas_h * (0.1 if is_mini else 0.12))
