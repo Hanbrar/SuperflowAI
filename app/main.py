@@ -363,10 +363,10 @@ class SuperFlowApp:
             arrowcolor=[("readonly", "#132640"), ("active", "#132640")],
         )
 
+        self._build_header(self.root)
+
         outer = ttk.Frame(self.root, padding=20)
         outer.pack(fill="both", expand=True)
-
-        self._build_header(outer)
 
         control_card = tk.Frame(
             outer,
@@ -570,34 +570,38 @@ class SuperFlowApp:
         twitter_link.pack(side="left")
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
-    def _build_header(self, parent: ttk.Frame) -> None:
-        canvas_h = 220
+    def _build_header(self, parent: tk.Misc) -> None:
+        canvas_h = 230
         header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0, bg="#f5ede3")
         header.pack(fill="x")
 
-        # Warm gradient: orange glow at top fading to exactly #f5ede3 at bottom
-        for y in range(canvas_h):
-            t = (y / (canvas_h - 1)) ** 0.55 if canvas_h > 1 else 1.0
-            r_v = int(round(255 + (245 - 255) * t))
-            g_v = int(round(218 + (237 - 218) * t))
-            b_v = int(round(188 + (227 - 188) * t))
-            header.create_line(0, y, 4000, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}")
+        # Warm gradient spanning full window width — fades to exactly #f5ede3 at bottom
+        def _draw_gradient(w: int = 2000) -> None:
+            header.delete("gradient")
+            for y in range(canvas_h):
+                t = (y / (canvas_h - 1)) ** 0.55
+                r_v = int(round(255 + (245 - 255) * t))
+                g_v = int(round(218 + (237 - 218) * t))
+                b_v = int(round(188 + (227 - 188) * t))
+                header.create_line(0, y, w, y, fill=f"#{r_v:02x}{g_v:02x}{b_v:02x}", tags="gradient")
+
+        _draw_gradient()
 
         subtitle_id = header.create_text(
-            0, 178,
+            0, 188,
             text="Simple voice dictation for free.",
             fill="#375273",
-            font=("Segoe UI", 14),
+            font=("Segoe UI", 11),
             anchor="n",
         )
 
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
         if not logo_path.exists():
-            header.coords(subtitle_id, 400, 178)
-            header.bind(
-                "<Configure>",
-                lambda e, sid=subtitle_id: header.coords(sid, e.width // 2, 178),
-            )
+            header.coords(subtitle_id, 400, 188)
+            header.bind("<Configure>", lambda e, sid=subtitle_id: (
+                _draw_gradient(e.width),
+                header.coords(sid, e.width // 2, 188),
+            ))
             return
         try:
             image = Image.open(logo_path).convert("RGBA")
@@ -608,16 +612,14 @@ class SuperFlowApp:
             bbox = image.getchannel("A").getbbox()
             if bbox:
                 image = image.crop(bbox)
-            image.thumbnail((480, 150), Image.Resampling.LANCZOS)
+            image.thumbnail((600, 170), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            logo_id = header.create_image(400, 78, image=self.logo_photo, anchor="center")
-            header.bind(
-                "<Configure>",
-                lambda e, lid=logo_id, sid=subtitle_id: (
-                    header.coords(lid, e.width // 2, 78),
-                    header.coords(sid, e.width // 2, 178),
-                ),
-            )
+            logo_id = header.create_image(400, 84, image=self.logo_photo, anchor="center")
+            header.bind("<Configure>", lambda e, lid=logo_id, sid=subtitle_id: (
+                _draw_gradient(e.width),
+                header.coords(lid, e.width // 2, 84),
+                header.coords(sid, e.width // 2, 188),
+            ))
         except Exception:
             pass
 
