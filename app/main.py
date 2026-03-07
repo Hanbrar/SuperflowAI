@@ -601,6 +601,7 @@ class SuperFlowApp:
             header.bind("<Configure>", lambda e, sid=subtitle_id: (
                 _draw_gradient(e.width),
                 header.coords(sid, e.width // 2, 188),
+                header.tag_raise(sid),
             ))
             return
         try:
@@ -619,6 +620,8 @@ class SuperFlowApp:
                 _draw_gradient(e.width),
                 header.coords(lid, e.width // 2, 84),
                 header.coords(sid, e.width // 2, 188),
+                header.tag_raise(lid),
+                header.tag_raise(sid),
             ))
         except Exception:
             pass
