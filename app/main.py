@@ -629,6 +629,8 @@ class SuperFlowApp:
     def _get_cursor_monitor(self) -> dict:
         """Return the work-area rect of whichever monitor the cursor is currently on."""
         try:
+            import struct as _struct
+
             class POINT(ctypes.Structure):
                 _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
             class RECT(ctypes.Structure):
@@ -637,13 +639,30 @@ class SuperFlowApp:
             class MONITORINFO(ctypes.Structure):
                 _fields_ = [("cbSize", ctypes.c_uint), ("rcMonitor", RECT),
                              ("rcWork", RECT), ("dwFlags", ctypes.c_uint)]
+
+            user32 = ctypes.windll.user32
             pt = POINT()
-            ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
-            hmon = ctypes.windll.user32.MonitorFromPoint(pt, 2)  # MONITOR_DEFAULTTONEAREST
+            user32.GetCursorPos(ctypes.byref(pt))
+
+            # ctypes cannot reliably pass structs by value, so pack POINT into a
+            # 64-bit integer (x in low 32 bits, y in high 32 bits) and declare
+            # argtypes accordingly — this matches the x64 calling convention.
+            user32.MonitorFromPoint.restype = ctypes.c_void_p
+            user32.MonitorFromPoint.argtypes = [ctypes.c_int64, ctypes.c_uint32]
+            packed = _struct.unpack("<q", _struct.pack("<ii", pt.x, pt.y))[0]
+            hmon = user32.MonitorFromPoint(packed, 2)  # MONITOR_DEFAULTTONEAREST
+            if not hmon:
+                raise RuntimeError("MonitorFromPoint returned NULL")
+
             mi = MONITORINFO()
             mi.cbSize = ctypes.sizeof(MONITORINFO)
-            ctypes.windll.user32.GetMonitorInfoW(hmon, ctypes.byref(mi))
+            if not user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
+                raise RuntimeError("GetMonitorInfoW failed")
+
             r = mi.rcWork
+            if r.right <= r.left or r.bottom <= r.top:
+                raise ValueError("Invalid monitor rect")
+
             return {"left": r.left, "top": r.top, "right": r.right, "bottom": r.bottom}
         except Exception:
             return {"left": 0, "top": 0,
