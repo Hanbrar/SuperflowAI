@@ -890,6 +890,9 @@ class SuperFlowApp:
             self._set_status("No speech detected. Try speaking closer to the microphone.")
             return
 
+        if len(text.split()) == 1:
+            text = text.rstrip(".,!?;:").lower()
+
         self.last_transcript = text
         self.session_entries.append({"timestamp": timestamp, "text": text})
         self.pdf_manager.update(self.session_entries)
