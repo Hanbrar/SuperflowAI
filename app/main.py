@@ -626,6 +626,30 @@ class SuperFlowApp:
         except Exception:
             pass
 
+    def _get_cursor_monitor(self) -> dict:
+        """Return the work-area rect of whichever monitor the cursor is currently on."""
+        try:
+            class POINT(ctypes.Structure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            class RECT(ctypes.Structure):
+                _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                             ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [("cbSize", ctypes.c_uint), ("rcMonitor", RECT),
+                             ("rcWork", RECT), ("dwFlags", ctypes.c_uint)]
+            pt = POINT()
+            ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+            hmon = ctypes.windll.user32.MonitorFromPoint(pt, 2)  # MONITOR_DEFAULTTONEAREST
+            mi = MONITORINFO()
+            mi.cbSize = ctypes.sizeof(MONITORINFO)
+            ctypes.windll.user32.GetMonitorInfoW(hmon, ctypes.byref(mi))
+            r = mi.rcWork
+            return {"left": r.left, "top": r.top, "right": r.right, "bottom": r.bottom}
+        except Exception:
+            return {"left": 0, "top": 0,
+                    "right": self.root.winfo_screenwidth(),
+                    "bottom": self.root.winfo_screenheight()}
+
     def _refresh_microphones(self) -> None:
         self.microphones.clear()
         try:
@@ -1013,7 +1037,10 @@ class SuperFlowApp:
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
-        popup.geometry("980x244")
+        mon = self._get_cursor_monitor()
+        px = mon["left"] + max(0, (mon["right"] - mon["left"] - 980) // 2)
+        py = mon["top"] + 40
+        popup.geometry(f"980x244+{px}+{py}")
         popup.minsize(980, 244)
         popup.configure(bg="#f5ede3")
         popup.attributes("-topmost", True)
@@ -1130,8 +1157,9 @@ class SuperFlowApp:
 
         width = 430
         height = 88
-        x = max(12, (popup.winfo_screenwidth() - width) // 2)
-        y = max(12, popup.winfo_screenheight() - height - 96)
+        mon = self._get_cursor_monitor()
+        x = mon["left"] + max(12, (mon["right"] - mon["left"] - width) // 2)
+        y = mon["bottom"] - height - 96
         popup.geometry(f"{width}x{height}+{x}+{y}")
 
         box = tk.Frame(
