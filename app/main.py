@@ -250,14 +250,14 @@ class ChoiceChip(ModernButton):
             text=text,
             command=self._choose,
             width=width,
-            height=38,
+            height=40,
             radius=14,
             fill="#f3ebe1",
             hover_fill="#ece1d4",
             active_fill="#e2d2c0",
             text_fill="#132640",
             border_fill="#dccfbe",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", 10),
         )
         self.variable.trace_add("write", self._sync_from_state)
         self._sync_from_state()
@@ -416,11 +416,11 @@ class SuperFlowApp:
         ).pack(side="left", padx=(12, 0))
         ChoiceChip(
             mode_row,
-            text="Control (hold Ctrl+Space)",
+            text="Hold Ctrl+Space",
             variable=self.mode_var,
             value="control",
             command=self._on_mode_changed,
-            width=222,
+            width=194,
         ).pack(side="left", padx=8)
 
         view_row = tk.Frame(control_card, bg="#ffffff")
@@ -428,27 +428,27 @@ class SuperFlowApp:
         tk.Label(view_row, text="Recorder view", bg="#ffffff", fg="#132640", font=("Segoe UI Semibold", 10)).pack(side="left")
         ChoiceChip(
             view_row,
-            text="Show SuperFlow Recorder",
+            text="Large",
             variable=self.recorder_view_var,
             value="show",
             command=self._on_view_changed,
-            width=194,
+            width=92,
         ).pack(side="left", padx=(12, 0))
         ChoiceChip(
             view_row,
-            text="Background only",
-            variable=self.recorder_view_var,
-            value="hidden",
-            command=self._on_view_changed,
-            width=148,
-        ).pack(side="left", padx=8)
-        ChoiceChip(
-            view_row,
-            text="Minimized recorder",
+            text="Minimized",
             variable=self.recorder_view_var,
             value="mini",
             command=self._on_view_changed,
-            width=174,
+            width=122,
+        ).pack(side="left", padx=8)
+        ChoiceChip(
+            view_row,
+            text="Background",
+            variable=self.recorder_view_var,
+            value="hidden",
+            command=self._on_view_changed,
+            width=118,
         ).pack(side="left", padx=8)
 
         ttk.Label(
@@ -567,7 +567,7 @@ class SuperFlowApp:
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
 
     def _build_header(self, parent: ttk.Frame) -> None:
-        canvas_h = 290
+        canvas_h = 252
         header = tk.Canvas(parent, height=canvas_h, bd=0, highlightthickness=0, bg="#f5ede3")
         header.pack(fill="x")
 
@@ -582,7 +582,7 @@ class SuperFlowApp:
 
         title_id = header.create_text(
             0,
-            210,
+            150,
             text="Super Flow",
             fill="#132640",
             font=("Segoe UI Semibold", 34),
@@ -590,22 +590,22 @@ class SuperFlowApp:
         )
         subtitle_id = header.create_text(
             0,
-            258,
+            202,
             text="Simple voice dictation for free.",
             fill="#375273",
-            font=("Segoe UI", 17),
+            font=("Segoe UI", 16),
             anchor="n",
         )
 
         logo_path = Path(__file__).resolve().parent.parent / "logo.png"
         if not logo_path.exists():
-            header.coords(title_id, 400, 210)
-            header.coords(subtitle_id, 400, 258)
+            header.coords(title_id, 400, 150)
+            header.coords(subtitle_id, 400, 202)
             header.bind(
                 "<Configure>",
                 lambda e, tid=title_id, sid=subtitle_id: (
-                    header.coords(tid, e.width // 2, 210),
-                    header.coords(sid, e.width // 2, 258),
+                    header.coords(tid, e.width // 2, 150),
+                    header.coords(sid, e.width // 2, 202),
                 ),
             )
             return
@@ -619,15 +619,15 @@ class SuperFlowApp:
             bbox = image.getchannel("A").getbbox()
             if bbox:
                 image = image.crop(bbox)
-            image.thumbnail((320, 140), Image.Resampling.LANCZOS)
+            image.thumbnail((300, 128), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
-            logo_id = header.create_image(400, 92, image=self.logo_photo, anchor="center")
+            logo_id = header.create_image(400, 70, image=self.logo_photo, anchor="center")
             header.bind(
                 "<Configure>",
                 lambda e, lid=logo_id, tid=title_id, sid=subtitle_id: (
-                    header.coords(lid, e.width // 2, 92),
-                    header.coords(tid, e.width // 2, 210),
-                    header.coords(sid, e.width // 2, 258),
+                    header.coords(lid, e.width // 2, 70),
+                    header.coords(tid, e.width // 2, 150),
+                    header.coords(sid, e.width // 2, 202),
                 ),
             )
         except Exception:
@@ -1130,7 +1130,7 @@ class SuperFlowApp:
         self._tick_waveform()
 
     def _show_mini_recording_popup(self) -> None:
-        self.wave_midline = 24.0
+        self.wave_midline = 26.0
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
@@ -1141,7 +1141,7 @@ class SuperFlowApp:
         popup.protocol("WM_DELETE_WINDOW", self._cancel_recording)
 
         width = 430
-        height = 82
+        height = 88
         x = max(12, (popup.winfo_screenwidth() - width) // 2)
         y = max(12, popup.winfo_screenheight() - height - 96)
         popup.geometry(f"{width}x{height}+{x}+{y}")
@@ -1179,7 +1179,7 @@ class SuperFlowApp:
             font=("Segoe UI", 9),
         ).pack(side="right")
 
-        self.wave_canvas = tk.Canvas(box, height=48, bg="#fcf7f1", highlightthickness=0)
+        self.wave_canvas = tk.Canvas(box, height=52, bg="#fcf7f1", highlightthickness=0)
         self.wave_canvas.pack(fill="x", pady=(8, 0))
 
         self.wave_rects.clear()
@@ -1216,14 +1216,16 @@ class SuperFlowApp:
             return
         canvas_h = int(float(self.wave_canvas.cget("height")))
         mid = self.wave_midline
-        base = max(4.0, canvas_h * 0.12)
-        max_amp = max(10.0, (canvas_h / 2) - 6.0)
-        amp = max(base, min(max_amp, self.audio_level * (max_amp * 1.45)))
+        is_mini = mid <= 26.0
+        base = max(3.0 if is_mini else 4.0, canvas_h * (0.1 if is_mini else 0.12))
+        max_amp = max(12.0 if is_mini else 10.0, (canvas_h / 2) - (4.0 if is_mini else 6.0))
+        reactivity = 2.45 if is_mini else 1.45
+        amp = max(base, min(max_amp, self.audio_level * (max_amp * reactivity)))
         count = len(self.wave_rects)
         for i, rect in enumerate(self.wave_rects):
             center_falloff = 1.0 - (abs((count / 2) - i) / (count / 2))
             wobble = math.sin((time.time() * 8.5) + (i * 0.34)) * 0.5 + 0.5
-            jitter = random.uniform(-1.4, 1.4)
+            jitter = random.uniform(-2.2, 2.2) if is_mini else random.uniform(-1.4, 1.4)
             h = base + (amp * center_falloff * wobble) + jitter
             x1, _y1, x2, _y2 = self.wave_canvas.coords(rect)
             top = mid - h
