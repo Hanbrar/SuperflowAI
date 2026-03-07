@@ -629,27 +629,33 @@ class SuperFlowApp:
     def _get_cursor_monitor(self) -> dict:
         """Return the rect of whichever monitor the cursor is currently on."""
         try:
-            cx = self.root.winfo_pointerx()
-            cy = self.root.winfo_pointery()
-
+            class POINT(ctypes.Structure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
             class RECT(ctypes.Structure):
                 _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
                              ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
 
-            monitors: list[dict] = []
+            user32 = ctypes.windll.user32
 
+            # GetCursorPos and EnumDisplayMonitors share the same virtual-desktop
+            # coordinate space, so they always agree across monitors.
+            pt = POINT()
+            user32.GetCursorPos(ctypes.byref(pt))
+            cx, cy = pt.x, pt.y
+
+            monitors: list[dict] = []
             MonitorEnumProc = ctypes.WINFUNCTYPE(
                 ctypes.c_bool, ctypes.c_ulong, ctypes.c_ulong,
                 ctypes.POINTER(RECT), ctypes.c_long,
             )
 
-            def _cb(hmon: int, hdc: int, lprect: ctypes.POINTER, lparam: int) -> bool:
+            def _cb(hmon: int, hdc: int, lprect: "ctypes.POINTER[RECT]", lparam: int) -> bool:
                 r = lprect.contents
                 monitors.append({"left": r.left, "top": r.top,
                                   "right": r.right, "bottom": r.bottom})
                 return True
 
-            ctypes.windll.user32.EnumDisplayMonitors(None, None, MonitorEnumProc(_cb), 0)
+            user32.EnumDisplayMonitors(None, None, MonitorEnumProc(_cb), 0)
 
             for m in monitors:
                 if m["left"] <= cx < m["right"] and m["top"] <= cy < m["bottom"]:
