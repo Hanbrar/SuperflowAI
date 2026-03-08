@@ -420,7 +420,7 @@ class SuperFlowApp:
             variable=self.mode_var,
             value="control",
             command=self._on_mode_changed,
-            width=194,
+            width=226,
         ).pack(side="left", padx=8)
 
         view_row = tk.Frame(control_card, bg="#ffffff")
