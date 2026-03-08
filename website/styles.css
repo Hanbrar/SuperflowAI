@@ -124,6 +124,19 @@ h1 {
   font-size: 1.07rem;
 }
 
+.trial-note {
+  margin: 0.8rem 0 0;
+  display: inline-block;
+  border: 1px solid rgba(255, 125, 69, 0.32);
+  background: rgba(255, 214, 189, 0.45);
+  color: #8e4d22;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.73rem;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  padding: 0.34rem 0.68rem;
+}
+
 .flags {
   margin-top: 1.05rem;
   display: flex;
@@ -228,10 +241,40 @@ h1 {
 }
 
 .focus-item img {
-  width: 36px;
-  height: 36px;
   object-fit: contain;
   flex: 0 0 auto;
+  display: block;
+}
+
+.focus-icon-pair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 28px;
+}
+
+.focus-icon {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+}
+
+.focus-icon-crop {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.focus-icon-gpt {
+  transform: scale(1.45);
+  transform-origin: center;
 }
 
 .focus-item span {
