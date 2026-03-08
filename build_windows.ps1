@@ -17,6 +17,9 @@ if (-not $SkipInstall) {
     --windowed `
     --onefile `
     --name SuperFlow `
+    --icon app_icon.ico `
+    --add-data "app_icon.ico;." `
+    --add-data "faviconupdated.png;." `
     --add-data "logo.png;." `
     app\main.py
 

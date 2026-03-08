@@ -6,6 +6,7 @@ import math
 import os
 import random
 import shutil
+import sys
 import tempfile
 import textwrap
 import threading
@@ -42,6 +43,12 @@ TRANSCRIBE_VAD_FILTER = False
 warnings.filterwarnings("ignore", message="`huggingface_hub` cache-system uses symlinks.*")
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 hf_logging.set_verbosity_error()
+
+
+def resource_path(filename: str) -> Path:
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / filename
+    return Path(__file__).resolve().parent.parent / filename
 
 
 def enable_dpi_awareness() -> None:
@@ -319,6 +326,7 @@ class SuperFlowApp:
         self.pdf_manager = SessionPDFManager()
 
         self.logo_photo: ImageTk.PhotoImage | None = None
+        self.app_icon_photo: ImageTk.PhotoImage | None = None
         self.transcript_box: tk.Text | None = None
         self.mic_combo: ttk.Combobox | None = None
 
@@ -330,11 +338,32 @@ class SuperFlowApp:
         self.wave_midline = 54.0
         self._entry_count: int = 0
 
+        self._apply_window_icon(self.root)
         self._build_ui()
         self._refresh_microphones()
         self._register_hotkeys()
         threading.Thread(target=self._preload_model, daemon=True).start()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _apply_window_icon(self, window: tk.Misc) -> None:
+        icon_ico = resource_path("app_icon.ico")
+        if icon_ico.exists():
+            try:
+                window.iconbitmap(str(icon_ico))
+            except Exception:
+                pass
+
+        icon_png = resource_path("faviconupdated.png")
+        fallback_png = resource_path("logo.png")
+        icon_source = icon_png if icon_png.exists() else fallback_png
+        if icon_source.exists():
+            try:
+                image = Image.open(icon_source).convert("RGBA")
+                image.thumbnail((256, 256), Image.Resampling.LANCZOS)
+                self.app_icon_photo = ImageTk.PhotoImage(image)
+                window.iconphoto(True, self.app_icon_photo)
+            except Exception:
+                pass
 
     def _build_ui(self) -> None:
         style = ttk.Style()
@@ -595,7 +624,7 @@ class SuperFlowApp:
             anchor="n",
         )
 
-        logo_path = Path(__file__).resolve().parent.parent / "logo.png"
+        logo_path = resource_path("logo.png")
         if not logo_path.exists():
             header.coords(subtitle_id, 400, 188)
             header.bind("<Configure>", lambda e, sid=subtitle_id: (
@@ -1050,6 +1079,7 @@ class SuperFlowApp:
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
+        self._apply_window_icon(popup)
         mon = self._get_cursor_monitor()
         px = mon["left"] + max(0, (mon["right"] - mon["left"] - 720) // 2)
         py = mon["top"] + 40
@@ -1162,6 +1192,7 @@ class SuperFlowApp:
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
+        self._apply_window_icon(popup)
         popup.configure(bg="#f5ede3")
         popup.overrideredirect(True)
         popup.attributes("-topmost", True)
