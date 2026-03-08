@@ -210,25 +210,26 @@ h1 {
 
 .focus-grid {
   margin-top: 1.1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
 .focus-item {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.42rem 0.85rem 0.42rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid rgba(19, 38, 64, 0.1);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72));
-  box-shadow: 0 4px 12px rgba(19, 38, 64, 0.07);
+  gap: 0.55rem;
+  padding: 1.1rem 0.8rem 0.9rem;
+  border-radius: 20px;
+  border: 1px solid rgba(19, 38, 64, 0.09);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.68));
+  box-shadow: 0 6px 18px rgba(19, 38, 64, 0.07);
 }
 
 .focus-item img {
-  width: 22px;
-  height: 22px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
   flex: 0 0 auto;
 }
@@ -236,7 +237,8 @@ h1 {
 .focus-item span {
   color: #132640;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  text-align: center;
 }
 
 .why {
@@ -409,6 +411,7 @@ h1 {
 }
 
 @media (max-width: 980px) {
+  .focus-grid,
   .features {
     grid-template-columns: 1fr;
   }

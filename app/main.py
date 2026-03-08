@@ -294,7 +294,7 @@ class SuperFlowApp:
         self.root.configure(bg="#f5ede3")
 
         self.status_var = tk.StringVar(
-            value="Ready. Hold Ctrl+Space, speak, release, and paste instantly."
+            value="Ready. Hold Ctrl+Alt+Space, speak, release, and paste instantly."
         )
         self.mode_var = tk.StringVar(value="control")
         self.recorder_view_var = tk.StringVar(value="mini")
@@ -416,7 +416,7 @@ class SuperFlowApp:
         ).pack(side="left", padx=(12, 0))
         ChoiceChip(
             mode_row,
-            text="Hold Ctrl+Space",
+            text="Hold Ctrl+Alt+Space",
             variable=self.mode_var,
             value="control",
             command=self._on_mode_changed,
@@ -453,7 +453,7 @@ class SuperFlowApp:
 
         tk.Label(
             control_card,
-            text="Hold Ctrl+Space and talk. Release to paste where your cursor is.",
+            text="Hold Ctrl+Alt+Space and talk. Release to paste where your cursor is.",
             wraplength=580,
             bg="#ffffff",
             fg="#375273",
@@ -700,7 +700,7 @@ class SuperFlowApp:
 
     def _register_hotkeys(self) -> None:
         try:
-            self.hotkey_handles.append(keyboard.add_hotkey("ctrl+space", self._on_space_hotkey, suppress=False))
+            self.hotkey_handles.append(keyboard.add_hotkey("ctrl+alt+space", self._on_space_hotkey, suppress=False))
             self.hotkey_handles.append(keyboard.add_hotkey("esc", self._on_escape_hotkey, suppress=False))
             self.hook_handle = keyboard.hook(self._on_key_event)
         except Exception as exc:
@@ -710,9 +710,9 @@ class SuperFlowApp:
     def _on_mode_changed(self) -> None:
         self.combo_is_pressed = False
         if self.mode_var.get() == "toggle":
-            self._set_status("Toggle mode active. Press Ctrl+Space to start and press again to stop.")
+            self._set_status("Toggle mode active. Press Ctrl+Alt+Space to start and press again to stop.")
         else:
-            self._set_status("Control mode active. Hold Ctrl+Space, release to transcribe and paste.")
+            self._set_status("Control mode active. Hold Ctrl+Alt+Space, release to transcribe and paste.")
 
     def _on_view_changed(self) -> None:
         view = self.recorder_view_var.get()
@@ -746,10 +746,10 @@ class SuperFlowApp:
     def _on_key_event(self, event: keyboard.KeyboardEvent) -> None:
         if self.mode_var.get() != "control":
             return
-        if event.name not in {"ctrl", "left ctrl", "right ctrl", "space"}:
+        if event.name not in {"ctrl", "left ctrl", "right ctrl", "alt", "left alt", "right alt", "space"}:
             return
 
-        combo_down = keyboard.is_pressed("ctrl") and keyboard.is_pressed("space")
+        combo_down = keyboard.is_pressed("ctrl") and keyboard.is_pressed("alt") and keyboard.is_pressed("space")
         if combo_down and not self.combo_is_pressed:
             self.combo_is_pressed = True
             self._start_recording("space")
@@ -792,9 +792,9 @@ class SuperFlowApp:
             self.root.after(0, self._show_recording_popup)
 
         if self.mode_var.get() == "toggle":
-            self._set_status("Listening. Press Ctrl+Space again to stop.")
+            self._set_status("Listening. Press Ctrl+Alt+Space again to stop.")
         else:
-            self._set_status("Listening. Release Ctrl+Space to stop.")
+            self._set_status("Listening. Release Ctrl+Alt+Space to stop.")
 
     def _audio_callback(self, indata: np.ndarray[Any, Any], frames: int, time_info: Any, status: Any) -> None:
         del frames, time_info
@@ -889,7 +889,7 @@ class SuperFlowApp:
                 without_timestamps=True,
             )
             list(warm_segments)
-            self._set_status("Ready. Hold Ctrl+Space, then release to transcribe and paste at cursor.")
+            self._set_status("Ready. Hold Ctrl+Alt+Space, then release to transcribe and paste at cursor.")
         except Exception:
             # Keep startup resilient even if model warm-up fails.
             pass
@@ -1098,7 +1098,7 @@ class SuperFlowApp:
         if self.mode_var.get() == "control":
             stop_hint = "Release"
         else:
-            stop_hint = "Ctrl+Space"
+            stop_hint = "Ctrl+Alt+Space"
         tk.Label(
             right,
             text="Stop",
