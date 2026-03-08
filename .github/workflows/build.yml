@@ -24,7 +24,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build exe
-        run: pyinstaller SuperFlow.spec
+        run: .\build_windows.ps1 -SkipInstall
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
