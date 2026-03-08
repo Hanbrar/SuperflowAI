@@ -1,38 +1,29 @@
 # Super Flow
 
-<img src="logo.png" alt="Super Flow Logo" width="220">
+<p align="center">
+  <img src="website/logo_web.png" alt="Super Flow" width="420">
+</p>
 
-Super Flow is a free Windows dictation app plus a lightweight download landing page.
+Super Flow is a free, open-source Windows voice dictation app with a lightweight website.
 
-Core product goals implemented in this first version:
-- `Ctrl+Space` default hold-to-talk dictation flow with auto-paste at cursor on release.
-- Optional recorder popup visibility toggle (show popup or run in background only).
-- Toggle mode and control mode (hold-to-talk).
-- Local microphone selection.
-- Temporary session PDF generation with close warning and export option.
-- No permanent transcript storage by default.
+## Hotkey (Locked For Now)
 
-## Project Structure
+The product hotkey is currently fixed as:
 
-- `app/main.py`: Windows desktop app (Tkinter + local speech transcription).
-- `website/index.html`: landing page.
-- `website/styles.css`: landing page styling.
-- `build_windows.ps1`: one-command Windows build script for executable packaging.
-- `logo.png`: project logo used by app and website.
+`Ctrl + Alt + Space`
 
-## Free Stack Used
+Hold to record, release to transcribe and paste.
 
-- Speech recognition: `faster-whisper` (open-source local model).
-- Audio capture: `sounddevice`.
-- Global hotkey + paste: `keyboard` + `pyperclip`.
-- Session PDF export: `reportlab`.
-- UI: built-in `tkinter`.
+## What It Does
 
-## Windows Setup
+- Fast dictation and auto-paste at cursor.
+- Microphone selection.
+- Toggle / hold activation modes.
+- Recorder view modes (Large / Minimized / Background).
+- Session transcript with copy actions.
+- Export session transcript to PDF.
 
-1. Install Python 3.11+.
-2. Open PowerShell in the repo folder.
-3. Run:
+## Run Locally (Windows)
 
 ```powershell
 python -m venv .venv
@@ -42,27 +33,27 @@ python -m pip install -r requirements.txt
 python app\main.py
 ```
 
-## Usage
-
-1. Open Super Flow.
-2. Select a microphone.
-3. Hold `Ctrl+Space` to start dictation.
-4. Release `Ctrl+Space` to stop and paste text.
-5. Optional: choose recorder visibility mode (`Show SuperFlow Recorder` or `Background only`).
-6. Use `Export Session PDF` anytime to save the current transcript.
-
-When closing the app, a warning appears so you can export the temporary session PDF before it is removed.
-
-## Build Windows EXE
+## Build EXE
 
 ```powershell
 .\build_windows.ps1
 ```
 
-Output:
+Build output:
 - `dist\SuperFlow.exe`
 
-## Landing Page
+## Website
 
-Open `website/index.html` in a browser, or host the `website` folder on static hosting.
-Set the download button to your release artifact URL.
+- Source: `website/`
+- Main file: `website/index.html`
+- Vercel root directory: `website`
+- Download button target:
+  - `https://github.com/Hanbrar/SuperflowAI/releases/latest/download/SuperFlow.exe`
+
+## Stack
+
+- Python + Tkinter UI
+- `faster-whisper`
+- `sounddevice`
+- `keyboard` + `pyperclip`
+- `reportlab`
