@@ -29,7 +29,6 @@ from huggingface_hub.utils import logging as hf_logging
 from PIL import Image, ImageTk
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from ctypes import wintypes
 from tkinter import font as tkfont
 from tkinter import filedialog, messagebox, ttk
 
@@ -330,7 +329,6 @@ class SuperFlowApp:
         self.audio_level = 0.0
         self.wave_midline = 54.0
         self._entry_count: int = 0
-        self._large_popup_pos: tuple[int, int] | None = None
 
         self._build_ui()
         self._refresh_microphones()
@@ -629,47 +627,46 @@ class SuperFlowApp:
             pass
 
     def _get_cursor_monitor(self) -> dict:
-        """Return the work-area rect of the monitor the cursor is currently on.
-        Uses MonitorFromRect (pointer-based) to avoid ctypes struct-by-value issues."""
+        """Return the rect of whichever monitor the cursor is currently on."""
         try:
+            class POINT(ctypes.Structure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
             class RECT(ctypes.Structure):
                 _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
                              ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
-            class MONITORINFO(ctypes.Structure):
-                _fields_ = [("cbSize", ctypes.c_uint), ("rcMonitor", RECT),
-                             ("rcWork", RECT), ("dwFlags", ctypes.c_uint)]
 
             user32 = ctypes.windll.user32
 
-            # GetCursorPos via byref — no struct-by-value issue
-            cursor_pt = wintypes.POINT()
-            user32.GetCursorPos(ctypes.byref(cursor_pt))
+            # GetCursorPos and EnumDisplayMonitors share the same virtual-desktop
+            # coordinate space, so they always agree across monitors.
+            pt = POINT()
+            user32.GetCursorPos(ctypes.byref(pt))
+            cx, cy = pt.x, pt.y
 
-            # MonitorFromRect takes a LPRECT (pointer) — avoids POINT struct-by-value
-            cursor_rect = RECT(cursor_pt.x, cursor_pt.y, cursor_pt.x + 1, cursor_pt.y + 1)
-            user32.MonitorFromRect.restype = ctypes.c_void_p
-            user32.MonitorFromRect.argtypes = [ctypes.POINTER(RECT), ctypes.c_uint]
-            hmon = user32.MonitorFromRect(ctypes.byref(cursor_rect), 2)
-            if not hmon:
-                raise RuntimeError("MonitorFromRect returned NULL")
+            monitors: list[dict] = []
+            MonitorEnumProc = ctypes.WINFUNCTYPE(
+                ctypes.c_bool, ctypes.c_ulong, ctypes.c_ulong,
+                ctypes.POINTER(RECT), ctypes.c_long,
+            )
 
-            # GetMonitorInfoW gives rcWork = work area excluding taskbar
-            mi = MONITORINFO()
-            mi.cbSize = ctypes.sizeof(MONITORINFO)
-            user32.GetMonitorInfoW.restype = ctypes.c_bool
-            user32.GetMonitorInfoW.argtypes = [ctypes.c_void_p, ctypes.POINTER(MONITORINFO)]
-            if not user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
-                raise RuntimeError("GetMonitorInfoW failed")
+            def _cb(hmon: int, hdc: int, lprect: "ctypes.POINTER[RECT]", lparam: int) -> bool:
+                r = lprect.contents
+                monitors.append({"left": r.left, "top": r.top,
+                                  "right": r.right, "bottom": r.bottom})
+                return True
 
-            r = mi.rcWork
-            if r.right > r.left and r.bottom > r.top:
-                return {"left": r.left, "top": r.top, "right": r.right, "bottom": r.bottom}
+            user32.EnumDisplayMonitors(None, None, MonitorEnumProc(_cb), 0)
+
+            for m in monitors:
+                if m["left"] <= cx < m["right"] and m["top"] <= cy < m["bottom"]:
+                    return m
+            if monitors:
+                return monitors[0]
         except Exception:
             pass
         return {"left": 0, "top": 0,
                 "right": self.root.winfo_screenwidth(),
                 "bottom": self.root.winfo_screenheight()}
-
 
     def _refresh_microphones(self) -> None:
         self.microphones.clear()
@@ -1058,24 +1055,15 @@ class SuperFlowApp:
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
-        if self._large_popup_pos:
-            px, py = self._large_popup_pos
-        else:
-            mon = self._get_cursor_monitor()
-            px = mon["left"] + max(0, (mon["right"] - mon["left"] - 980) // 2)
-            py = mon["top"] + 40
+        mon = self._get_cursor_monitor()
+        px = mon["left"] + max(0, (mon["right"] - mon["left"] - 980) // 2)
+        py = mon["top"] + 40
         popup.geometry(f"980x244+{px}+{py}")
         popup.minsize(980, 244)
         popup.configure(bg="#f5ede3")
         popup.attributes("-topmost", True)
         popup.resizable(False, False)
         popup.protocol("WM_DELETE_WINDOW", self._cancel_recording)
-
-        def _save_pos(event: tk.Event) -> None:
-            if event.widget is popup:
-                self._large_popup_pos = (popup.winfo_x(), popup.winfo_y())
-
-        popup.bind("<Configure>", _save_pos)
 
         box = tk.Frame(popup, bg="#f5ede3", highlightthickness=1, highlightbackground="#e0d5c8")
         box.pack(fill="both", expand=True, padx=14, pady=14)
@@ -1177,20 +1165,19 @@ class SuperFlowApp:
     def _show_mini_recording_popup(self) -> None:
         self.wave_midline = 26.0
 
-        width = 430
-        height = 88
-        sw = self.root.winfo_screenwidth()
-        sh = self.root.winfo_screenheight()
-        x = max(12, (sw - width) // 2)
-        y = sh - height - 60
-
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
         popup.configure(bg="#f5ede3")
         popup.overrideredirect(True)
+        popup.attributes("-topmost", True)
         popup.resizable(False, False)
         popup.protocol("WM_DELETE_WINDOW", self._cancel_recording)
-        popup.attributes("-topmost", True)
+
+        width = 430
+        height = 88
+        mon = self._get_cursor_monitor()
+        x = mon["left"] + max(12, (mon["right"] - mon["left"] - width) // 2)
+        y = mon["bottom"] - height - 12
         popup.geometry(f"{width}x{height}+{x}+{y}")
 
         box = tk.Frame(
