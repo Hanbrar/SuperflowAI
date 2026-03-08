@@ -868,6 +868,13 @@ class SuperFlowApp:
                 vad_filter=TRANSCRIBE_VAD_FILTER,
                 condition_on_previous_text=False,
                 without_timestamps=True,
+                initial_prompt=(
+                    "GitHub, Vercel, SuperFlow, PyInstaller, Whisper, API, "
+                    "VS Code, ChatGPT, Claude, OpenAI, Anthropic, "
+                    "Python, JavaScript, TypeScript, React, Next.js, "
+                    "vibe coding, pull request, commit, deploy, repo, "
+                    "Ctrl, Alt, Space, hotkey, transcribe, dictation."
+                ),
             )
             segments = list(segments)
             text = " ".join(segment.text.strip() for segment in segments).strip()
