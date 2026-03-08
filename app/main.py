@@ -973,24 +973,12 @@ class SuperFlowApp:
         self.transcript_box.configure(state="disabled")
 
     def _paste_text(self, text: str) -> None:
-        previous: str | None
-        try:
-            previous = pyperclip.paste()
-        except Exception:
-            previous = None
         try:
             pyperclip.copy(text)
-            time.sleep(0.05)
+            time.sleep(0.08)
             keyboard.send("ctrl+v")
-            time.sleep(0.05)
         except Exception as exc:
             self._set_status(f"Transcribed but auto-paste failed: {exc}")
-        finally:
-            if previous is not None:
-                try:
-                    pyperclip.copy(previous)
-                except Exception:
-                    pass
 
     def _copy_last_transcript(self) -> None:
         if not self.last_transcript:
@@ -1051,15 +1039,15 @@ class SuperFlowApp:
         self._show_large_recording_popup()
 
     def _show_large_recording_popup(self) -> None:
-        self.wave_midline = 54.0
+        self.wave_midline = 40.0
 
         popup = tk.Toplevel(self.root)
         popup.title("Super Flow Recorder")
         mon = self._get_cursor_monitor()
-        px = mon["left"] + max(0, (mon["right"] - mon["left"] - 980) // 2)
+        px = mon["left"] + max(0, (mon["right"] - mon["left"] - 720) // 2)
         py = mon["top"] + 40
-        popup.geometry(f"980x244+{px}+{py}")
-        popup.minsize(980, 244)
+        popup.geometry(f"720x188+{px}+{py}")
+        popup.minsize(720, 188)
         popup.configure(bg="#f5ede3")
         popup.attributes("-topmost", True)
         popup.resizable(False, False)
@@ -1070,19 +1058,19 @@ class SuperFlowApp:
 
         wave_wrap = tk.Frame(box, bg="#f5ede3")
         wave_wrap.pack(fill="x", padx=26, pady=(16, 8))
-        self.wave_canvas = tk.Canvas(wave_wrap, height=108, bg="#f7efe4", highlightthickness=0)
+        self.wave_canvas = tk.Canvas(wave_wrap, height=80, bg="#f7efe4", highlightthickness=0)
         self.wave_canvas.pack(fill="x")
 
         self.wave_rects.clear()
-        bar_count = 86
+        bar_count = 60
         bar_w = 5
-        gap = 5
+        gap = 4
         total = (bar_count * bar_w) + ((bar_count - 1) * gap)
-        start_x = max(10, int((920 - total) / 2))
+        start_x = max(10, int((660 - total) / 2))
         for i in range(bar_count):
             x1 = start_x + (i * (bar_w + gap))
             x2 = x1 + bar_w
-            rect = self.wave_canvas.create_rectangle(x1, 54, x2, 54, fill="#132640", width=0)
+            rect = self.wave_canvas.create_rectangle(x1, 40, x2, 40, fill="#132640", width=0)
             self.wave_rects.append(rect)
 
         divider = tk.Frame(box, bg="#e0d5c8", height=1)
@@ -1092,21 +1080,21 @@ class SuperFlowApp:
         footer.pack(fill="x", padx=0, pady=(0, 0))
 
         left = tk.Frame(footer, bg="#f5ede3")
-        left.pack(side="left", padx=20, pady=14)
-        dot = tk.Canvas(left, width=16, height=16, bg="#f5ede3", highlightthickness=0)
-        dot.pack(side="left", padx=(0, 10))
-        dot.create_oval(3, 3, 13, 13, fill="#ff4b43", outline="")
+        left.pack(side="left", padx=16, pady=10)
+        dot = tk.Canvas(left, width=13, height=13, bg="#f5ede3", highlightthickness=0)
+        dot.pack(side="left", padx=(0, 8))
+        dot.create_oval(2, 2, 11, 11, fill="#ff4b43", outline="")
 
         tk.Label(
             left,
             text="Recording",
             fg="#132640",
             bg="#f5ede3",
-            font=("Segoe UI Semibold", 15),
+            font=("Segoe UI Semibold", 12),
         ).pack(side="left")
 
         right = tk.Frame(footer, bg="#f5ede3")
-        right.pack(side="right", padx=20, pady=12)
+        right.pack(side="right", padx=16, pady=8)
         if self.mode_var.get() == "control":
             stop_hint = "Release"
         else:
@@ -1116,43 +1104,43 @@ class SuperFlowApp:
             text="Stop",
             fg="#6a7f9b",
             bg="#f5ede3",
-            font=("Segoe UI", 16),
-        ).pack(side="left", padx=(0, 10))
+            font=("Segoe UI", 12),
+        ).pack(side="left", padx=(0, 8))
         ModernButton(
             right,
             text=stop_hint,
             command=self._stop_recording_and_transcribe,
-            width=140 if self.mode_var.get() == "toggle" else 128,
-            height=42,
-            radius=14,
+            width=120 if self.mode_var.get() == "toggle" else 108,
+            height=34,
+            radius=11,
             fill="#ff6d37",
             hover_fill="#f46531",
             active_fill="#e85d28",
             text_fill="#ffffff",
             border_fill="#ff6d37",
-            font=("Segoe UI Semibold", 12),
+            font=("Segoe UI Semibold", 11),
         ).pack(side="left")
-        tk.Label(right, text="|", fg="#c8bfb5", bg="#f5ede3", font=("Segoe UI", 18)).pack(side="left", padx=18)
+        tk.Label(right, text="|", fg="#c8bfb5", bg="#f5ede3", font=("Segoe UI", 14)).pack(side="left", padx=12)
         tk.Label(
             right,
             text="Exit",
             fg="#6a7f9b",
             bg="#f5ede3",
-            font=("Segoe UI", 16),
-        ).pack(side="left", padx=(0, 10))
+            font=("Segoe UI", 12),
+        ).pack(side="left", padx=(0, 8))
         ModernButton(
             right,
             text="Esc",
             command=self._stop_recording_and_transcribe,
-            width=86,
-            height=42,
-            radius=14,
+            width=70,
+            height=34,
+            radius=11,
             fill="#e7dbcf",
             hover_fill="#dccdbd",
             active_fill="#cfbea9",
             text_fill="#132640",
             border_fill="#d8c8b4",
-            font=("Segoe UI Semibold", 12),
+            font=("Segoe UI Semibold", 11),
         ).pack(side="left")
 
         popup.bind("<space>", lambda _e: self._stop_recording_and_transcribe())
@@ -1175,9 +1163,10 @@ class SuperFlowApp:
 
         width = 430
         height = 88
-        mon = self._get_cursor_monitor()
-        x = mon["left"] + max(12, (mon["right"] - mon["left"] - width) // 2)
-        y = mon["bottom"] - height - 12
+        sw = self.root.winfo_screenwidth()
+        sh = self.root.winfo_screenheight()
+        x = max(12, (sw - width) // 2)
+        y = sh - height - 60
         popup.geometry(f"{width}x{height}+{x}+{y}")
 
         box = tk.Frame(
