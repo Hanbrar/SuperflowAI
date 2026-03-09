@@ -4,7 +4,9 @@
   <img src="website/logo_web.png" alt="Super Flow" width="420">
 </p>
 
-Super Flow is a free, open-source Windows voice dictation app with a lightweight website.
+<p align="center">
+  Super Flow is a free, open-source Windows voice dictation app with a lightweight website.
+</p>
 
 ## Hotkey (Locked For Now)
 
