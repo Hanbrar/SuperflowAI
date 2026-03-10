@@ -22,6 +22,7 @@ Hold to record, release to transcribe and paste.
 - Microphone selection.
 - Toggle / hold activation modes.
 - Recorder view modes (Large / Minimized / Background).
+- Built-in update check that opens the latest download page when a newer tagged release exists.
 - Session transcript with copy actions.
 - Export session transcript to PDF.
 
@@ -43,6 +44,11 @@ python app\main.py
 
 Build output:
 - `dist\SuperFlow.exe`
+
+Release/version notes:
+- Public releases are built from Git tags that match `v*`.
+- The app version is defined in `app/main.py` as `APP_VERSION`.
+- The desktop app checks GitHub Releases and prompts users to open the latest download page when a newer version exists.
 
 ## Website
 

@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import ctypes
+import json
 import logging
 import math
 import os
 import random
+import re
 import shutil
 import sys
 import tempfile
 import textwrap
 import threading
 import time
+import urllib.error
+import urllib.request
 import webbrowser
 import warnings
 from datetime import datetime
@@ -34,11 +38,15 @@ from tkinter import font as tkfont
 from tkinter import filedialog, messagebox, ttk
 
 APP_TITLE = "Super Flow"
+APP_VERSION = "1.0.5"
 DEFAULT_MODEL = "tiny.en"
 SAMPLE_RATE = 16000
 CHANNELS = 1
 TRANSCRIBE_BEAM_SIZE = 1
 TRANSCRIBE_VAD_FILTER = False
+GITHUB_REPO = "Hanbrar/SuperflowAI"
+UPDATE_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+UPDATE_DOWNLOAD_URL = "https://github.com/Hanbrar/SuperflowAI/releases/latest"
 
 warnings.filterwarnings("ignore", message="`huggingface_hub` cache-system uses symlinks.*")
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
@@ -59,6 +67,26 @@ def enable_dpi_awareness() -> None:
             ctypes.windll.user32.SetProcessDPIAware()
         except Exception:
             pass
+
+
+def _version_key(version: str) -> tuple[int, ...]:
+    clean = version.strip().lstrip("vV")
+    parts = []
+    for part in re.split(r"[.\-+_]", clean):
+        match = re.match(r"(\d+)", part)
+        if match is None:
+            break
+        parts.append(int(match.group(1)))
+    return tuple(parts)
+
+
+def _is_newer_version(candidate: str, current: str) -> bool:
+    candidate_key = _version_key(candidate)
+    current_key = _version_key(current)
+    width = max(len(candidate_key), len(current_key))
+    candidate_key += (0,) * (width - len(candidate_key))
+    current_key += (0,) * (width - len(current_key))
+    return candidate_key > current_key
 
 
 class SessionPDFManager:
@@ -336,6 +364,8 @@ class SuperFlowApp:
         self.wave_timer: str | None = None
         self.audio_level = 0.0
         self.wave_midline = 54.0
+        self.update_check_in_progress = False
+        self.last_prompted_update_version: str | None = None
         self._entry_count: int = 0
 
         self._apply_window_icon(self.root)
@@ -343,6 +373,7 @@ class SuperFlowApp:
         self._refresh_microphones()
         self._register_hotkeys()
         threading.Thread(target=self._preload_model, daemon=True).start()
+        self.root.after(1800, self._check_for_updates_silent)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _apply_window_icon(self, window: tk.Misc) -> None:
@@ -598,6 +629,10 @@ class SuperFlowApp:
         twitter_link = ttk.Label(footer, text="Twitter", foreground="#0f5ea8", cursor="hand2")
         twitter_link.pack(side="left")
         twitter_link.bind("<Button-1>", lambda _: webbrowser.open("https://x.com/ItsHB17"))
+        update_link = ttk.Label(footer, text="Check for Updates", foreground="#0f5ea8", cursor="hand2")
+        update_link.pack(side="right")
+        update_link.bind("<Button-1>", lambda _: self._check_for_updates(user_initiated=True))
+        ttk.Label(footer, text=f"v{APP_VERSION}", foreground="#6a7f9b").pack(side="right", padx=(0, 10))
 
     def _build_header(self, parent: tk.Misc) -> None:
         canvas_h = 230
@@ -1296,6 +1331,97 @@ class SuperFlowApp:
             bot = mid + h
             self.wave_canvas.coords(rect, x1, top, x2, bot)
         self.wave_timer = self.root.after(45, self._tick_waveform)
+
+    def _check_for_updates_silent(self) -> None:
+        self._check_for_updates(user_initiated=False)
+
+    def _check_for_updates(self, user_initiated: bool) -> None:
+        if self.update_check_in_progress:
+            if user_initiated:
+                self._set_status("Already checking for updates.")
+            return
+        self.update_check_in_progress = True
+        if user_initiated:
+            self._set_status("Checking for updates...")
+        threading.Thread(target=self._update_check_worker, args=(user_initiated,), daemon=True).start()
+
+    def _update_check_worker(self, user_initiated: bool) -> None:
+        release_version = ""
+        release_name = ""
+        error_message = ""
+        try:
+            request = urllib.request.Request(
+                UPDATE_API_URL,
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": f"SuperFlow/{APP_VERSION}",
+                },
+            )
+            with urllib.request.urlopen(request, timeout=8) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            release_name = str(payload.get("name") or "").strip()
+            release_version = str(payload.get("tag_name") or "").strip()
+            if not release_version:
+                error_message = "GitHub did not return a release tag."
+        except urllib.error.HTTPError as exc:
+            error_message = f"GitHub returned HTTP {exc.code}."
+        except urllib.error.URLError:
+            error_message = "Could not reach GitHub."
+        except Exception as exc:
+            error_message = str(exc) or "Unknown update check error."
+
+        self.root.after(
+            0,
+            lambda: self._finish_update_check(
+                release_version=release_version,
+                release_name=release_name,
+                error_message=error_message,
+                user_initiated=user_initiated,
+            ),
+        )
+
+    def _finish_update_check(
+        self,
+        *,
+        release_version: str,
+        release_name: str,
+        error_message: str,
+        user_initiated: bool,
+    ) -> None:
+        self.update_check_in_progress = False
+
+        if error_message:
+            if user_initiated:
+                messagebox.showerror("Update check failed", error_message)
+                self._set_status(f"Update check failed: {error_message}")
+            return
+
+        latest_version = release_version.lstrip("vV")
+        if latest_version and _is_newer_version(latest_version, APP_VERSION):
+            self._set_status(f"Update available: v{latest_version}.")
+            if not user_initiated and self.last_prompted_update_version == latest_version:
+                return
+            self.last_prompted_update_version = latest_version
+            release_label = release_name or f"v{latest_version}"
+            choice = messagebox.askyesno(
+                "Update Available",
+                (
+                    f"{APP_TITLE} {release_label} is available.\n"
+                    f"You are currently on v{APP_VERSION}.\n\n"
+                    "Open the download page now?"
+                ),
+            )
+            if choice:
+                webbrowser.open(UPDATE_DOWNLOAD_URL)
+                self._set_status(f"Opened download page for v{latest_version}.")
+            return
+
+        if user_initiated:
+            messagebox.showinfo(
+                "Up To Date",
+                f"You are on the latest version of {APP_TITLE} (v{APP_VERSION}).",
+            )
+            self._set_status(f"{APP_TITLE} is up to date.")
 
     def _set_status(self, message: str) -> None:
         self.root.after(0, lambda: self.status_var.set(message))
