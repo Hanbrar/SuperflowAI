@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
     steps:
@@ -34,5 +34,58 @@ jobs:
         with:
           files: dist/SuperFlow.exe
           generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            pyinstaller \
+            "pynput>=1.7" \
+            "faster-whisper>=1.1.0" \
+            "sounddevice>=0.5.1" \
+            "pyperclip>=1.9.0" \
+            "reportlab>=4.2.0" \
+            "Pillow>=10.4.0" \
+            "numpy>=1.26.0"
+
+      - name: Build .app
+        run: |
+          pyinstaller \
+            --name "SuperFlow" \
+            --windowed \
+            --onefile \
+            --noconfirm \
+            --add-data "logo.png:." \
+            --add-data "faviconupdated.png:." \
+            --hidden-import "pynput.keyboard._darwin" \
+            --hidden-import "pynput.mouse._darwin" \
+            --hidden-import "faster_whisper" \
+            --hidden-import "sounddevice" \
+            --hidden-import "pyperclip" \
+            --collect-all "faster_whisper" \
+            app_mac/main.py
+
+      - name: Zip .app bundle
+        run: |
+          cd dist
+          zip -r SuperFlow-Mac.zip SuperFlow.app
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/SuperFlow-Mac.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
