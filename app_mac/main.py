@@ -37,7 +37,7 @@ from tkinter import font as tkfont
 from tkinter import filedialog, messagebox, ttk
 
 APP_TITLE = "Super Flow"
-APP_VERSION = "1.0.5"
+APP_VERSION = "1.0.6"
 DEFAULT_MODEL = "tiny.en"
 SAMPLE_RATE = 16000
 CHANNELS = 1
